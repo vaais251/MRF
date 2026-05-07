@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  TRUST_MGMT
+  PROGRAM_MANAGER
+  MEO_OFFICER
+  SCHOOL_AUTHORITY
+  HOSTEL_INCHARGE
+  RFL_COORDINATOR
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(SUPER_ADMIN)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+enum ParticipantStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+  ON_HOLD
+}
+
+enum SessionType {
+  GROUP
+  ONE_ON_ONE
+}
+
+model RFLParticipant {
+  id                String            @id @default(cuid())
+  name              String
+  program           String
+  institute         String
+  startYear         Int
+  endYear           Int
+  currentSemester   Int
+  academicResults   Json
+  status            ParticipantStatus @default(ACTIVE)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  createdBy         String
+  mentorships       RFLMentorship[]
+
+  @@index([status])
+}
+
+model RFLMentorship {
+  id              String         @id @default(cuid())
+  participantId   String
+  participant     RFLParticipant @relation(fields: [participantId], references: [id])
+  mentorName      String
+  sessionType     SessionType
+  sessionDate     DateTime
+  targetAudience  String
+  notes           String?
+  createdAt       DateTime       @default(now())
+
+  @@index([participantId])
+}
+
+model RFLAlumni {
+  id            String    @id @default(cuid())
+  name          String
+  program       String
+  institute     String
+  graduationYear Int
+  currentStatus String
+  activities    RFLAlumniActivity[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model RFLAlumniActivity {
+  id          String    @id @default(cuid())
+  alumniId    String
+  alumni      RFLAlumni @relation(fields: [alumniId], references: [id])
+  activityName String
+  date        DateTime
+  type        String
+  status      String
+  createdAt   DateTime  @default(now())
+
+  @@index([alumniId])
+}
+
+model RFLSponsorship {
+  id              String    @id @default(cuid())
+  sponsorName     String
+  type            SponsorshipType
+  amount          Decimal?
+  startDate       DateTime
+  endDate         DateTime?
+  status          SponsorshipStatus @default(ACTIVE)
+  participantId   String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status])
+}
+
+enum SponsorshipType {
+  FULL
+  PARTIAL
+  MERIT_BASED
+  NEED_BASED
+}
+
+enum SponsorshipStatus {
+  ACTIVE
+  EXPIRED
+  PENDING
+  CANCELLED
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  userEmail   String
+  action      String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT
+  module      String   // RFL, USERS, SYSTEM
+  description String
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      NotifType @default(INFO)
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+}
+
+enum NotifType {
+  INFO
+  WARNING
+  SUCCESS
+  ERROR
+}
