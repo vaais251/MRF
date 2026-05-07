@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
     await logAction({
       userId: session.user.id,
-      userEmail: session.user.email,
+      userEmail: session.user.email ?? "",
       action: "EXPORT",
       module: "REPORTS",
       description: "Generated Mentorship Activity Report",

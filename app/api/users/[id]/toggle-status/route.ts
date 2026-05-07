@@ -28,7 +28,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     await logAction({
       userId: session.user.id,
-      userEmail: session.user.email,
+      userEmail: session.user.email ?? "",
       action: "UPDATE",
       module: "USERS",
       description: `Toggled user ${user.email} status to ${updatedUser.isActive ? 'ACTIVE' : 'INACTIVE'}`,

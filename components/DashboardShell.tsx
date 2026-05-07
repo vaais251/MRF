@@ -11,12 +11,31 @@ import type { Session } from "next-auth"
 import { cn } from "@/lib/utils"
 import { NotificationDropdown } from "./NotificationDropdown"
 
+interface NavChild {
+  label: string
+  href: string
+}
+
+interface NavItem {
+  label: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  roles: string[]
+  children?: NavChild[]
+  disabled?: boolean
+}
+
+interface NavGroup {
+  group: string
+  items: NavItem[]
+}
+
 interface DashboardShellProps {
   children: React.ReactNode
   session: Session
 }
 
-const NAVIGATION = [
+const NAVIGATION: NavGroup[] = [
   { 
     group: "OVERVIEW", 
     items: [
@@ -93,7 +112,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
         currentPageTitle = item.label
       }
       if (item.children) {
-        item.children.forEach(child => {
+        item.children.forEach((child: NavChild) => {
           if (child.href === pathname) {
             currentPageTitle = child.label === "Overview" ? item.label : child.label
           }
@@ -189,7 +208,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
                       
                       {item.children && isExpanded && (
                         <div className="pl-11 pr-3 py-1 space-y-1 animate-in slide-in-from-top-2 duration-200">
-                          {item.children.map(child => {
+                          {item.children.map((child: NavChild) => {
                             const isChildActive = pathname === child.href
                             return (
                               <button

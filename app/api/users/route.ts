@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
 
     await logAction({
       userId: session.user.id,
-      userEmail: session.user.email,
+      userEmail: session.user.email ?? "",
       action: "CREATE",
       module: "USERS",
       description: `Created user ${email} with role ${role}`,

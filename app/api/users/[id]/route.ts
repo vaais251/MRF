@@ -32,7 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     await logAction({
       userId: session.user.id,
-      userEmail: session.user.email,
+      userEmail: session.user.email ?? "",
       action: "UPDATE",
       module: "USERS",
       description: `Updated user ${user.email} (role: ${role}, active: ${isActive})`,
@@ -66,7 +66,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     await logAction({
       userId: session.user.id,
-      userEmail: session.user.email,
+      userEmail: session.user.email ?? "",
       action: "DELETE",
       module: "USERS",
       description: `Deleted user ${user.email}`,
