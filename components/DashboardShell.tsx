@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { 
-  Book, LayoutDashboard, GraduationCap, School, Users, 
-  UserCog, BarChart3, LogOut, Menu, Bell, X, ChevronDown 
+import {
+  Book, LayoutDashboard, GraduationCap, School, Users,
+  UserCog, BarChart3, LogOut, Menu, X, ChevronDown, CalendarDays
 } from "lucide-react"
 import type { Session } from "next-auth"
 import { cn } from "@/lib/utils"
 import { NotificationDropdown } from "./NotificationDropdown"
+import { Avatar } from "./Avatar"
+import { UserMenu } from "./UserMenu"
 
 interface NavChild {
   label: string
@@ -33,13 +35,15 @@ interface NavGroup {
 interface DashboardShellProps {
   children: React.ReactNode
   session: Session
+  userImage: string | null
 }
 
 const NAVIGATION: NavGroup[] = [
-  { 
-    group: "OVERVIEW", 
+  {
+    group: "OVERVIEW",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "SCHOOL_AUTHORITY", "HOSTEL_INCHARGE", "RFL_COORDINATOR"] }
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "SCHOOL_AUTHORITY", "HOSTEL_INCHARGE", "RFL_COORDINATOR"] },
+      { label: "Activities", href: "/dashboard/activities", icon: CalendarDays, roles: ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "SCHOOL_AUTHORITY", "HOSTEL_INCHARGE", "RFL_COORDINATOR"] }
     ]
   },
   { 
@@ -71,20 +75,41 @@ const NAVIGATION: NavGroup[] = [
   }
 ]
 
-export function DashboardShell({ children, session }: DashboardShellProps) {
+// Isolated so its per-second tick doesn't re-render the whole shell (which
+// previously caused the sidebar to remount and its submenu to "shake").
+function HeaderClock() {
+  const [now, setNow] = useState<Date | null>(null)
+
+  useEffect(() => {
+    setNow(new Date())
+    const timer = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <div className="hidden sm:block text-sm font-medium text-slate-500 dark:text-slate-400 tabular-nums">
+      {now
+        ? now.toLocaleString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+          })
+        : '...'}
+    </div>
+  )
+}
+
+export function DashboardShell({ children, session, userImage }: DashboardShellProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [currentTime, setCurrentTime] = useState<Date | null>(null)
   const [expandedItems, setExpandedItems] = useState<string[]>([])
 
   const userRole = session?.user?.role || "GUEST"
-
-  useEffect(() => {
-    setCurrentTime(new Date())
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
 
   useEffect(() => {
     setExpandedItems(prev => {
@@ -121,11 +146,6 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
     })
   })
 
-  const getInitials = (name?: string | null) => {
-    if (!name) return "U"
-    return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()
-  }
-
   const handleNavigation = (href: string, disabled?: boolean) => {
     if (disabled) return
     router.push(href)
@@ -138,7 +158,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
     )
   }
 
-  const SidebarContent = () => (
+  const renderSidebar = () => (
     <>
       <div className="h-16 flex items-center px-6 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3">
@@ -239,15 +259,21 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
       </div>
 
       <div className="p-4 border-t border-white/10 shrink-0">
-        <div className="flex items-center gap-3 px-2 mb-4">
-          <div className="w-10 h-10 rounded-full bg-[#C9A84C]/20 flex items-center justify-center text-[#C9A84C] font-bold shrink-0 shadow-inner">
-            {getInitials(session.user?.name)}
-          </div>
+        <button
+          onClick={() => handleNavigation("/dashboard/settings")}
+          className="flex items-center gap-3 px-2 py-2 mb-2 w-full rounded-md hover:bg-white/5 transition-colors text-left"
+          title="Account settings"
+        >
+          <Avatar
+            name={session.user?.name}
+            image={userImage}
+            className="w-10 h-10 bg-[#C9A84C]/20 text-[#C9A84C] shrink-0 shadow-inner"
+          />
           <div className="overflow-hidden">
             <div className="text-sm font-medium text-white truncate">{session.user?.name}</div>
             <div className="text-[10px] text-slate-400 truncate uppercase tracking-wider">{session.user?.role?.replace('_', ' ')}</div>
           </div>
-        </div>
+        </button>
         <button 
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors text-sm font-medium"
@@ -260,10 +286,10 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
   )
 
   return (
-    <div className="min-h-screen bg-[#F8F9FC] flex font-dm-sans">
+    <div className="min-h-screen bg-[#F8F9FC] dark:bg-slate-950 flex font-dm-sans">
       {/* Desktop Sidebar */}
       <aside className="w-[260px] bg-[#0A1628] fixed inset-y-0 left-0 z-50 hidden md:flex flex-col shadow-xl">
-        <SidebarContent />
+        {renderSidebar()}
       </aside>
 
       {/* Mobile Sidebar Overlay */}
@@ -282,46 +308,31 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
         >
           <X className="w-6 h-6" />
         </button>
-        <SidebarContent />
+        {renderSidebar()}
       </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 md:pl-[260px]">
         {/* Topbar */}
-        <header className="h-16 bg-white border-b border-[#E5E7EB] flex items-center justify-between px-4 sm:px-6 shrink-0 sticky top-0 z-30">
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-[#E5E7EB] dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 shrink-0 sticky top-0 z-30">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
+              className="md:hidden p-2 -ml-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors"
             >
               <Menu className="w-6 h-6" />
             </button>
-            <h1 className="text-xl font-playfair font-semibold text-slate-800">{currentPageTitle}</h1>
+            <h1 className="text-xl font-playfair font-semibold text-slate-800 dark:text-white">{currentPageTitle}</h1>
           </div>
-          
+
           <div className="flex items-center gap-5 sm:gap-6">
-            <div className="hidden sm:block text-sm font-medium text-slate-500 tabular-nums">
-              {currentTime ? currentTime.toLocaleString('en-US', { 
-                weekday: 'short', 
-                month: 'short', 
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-              }) : '...'}
-            </div>
-            
+            <HeaderClock />
+
             <NotificationDropdown />
 
-            <div className="h-8 w-px bg-slate-200 hidden sm:block"></div>
+            <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
-            <div className="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-full">
-              <span className="text-sm font-medium text-slate-700">{session.user?.name}</span>
-              <span className="text-[10px] uppercase font-bold text-[#C9A84C] bg-[#C9A84C]/10 px-2 py-0.5 rounded-full">
-                {session.user?.role?.replace('_', ' ')}
-              </span>
-            </div>
+            <UserMenu session={session} initialImage={userImage} />
           </div>
         </header>
 

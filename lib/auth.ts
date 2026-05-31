@@ -42,10 +42,17 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.role = user.role
         token.id = user.id
+      }
+      // Reflect a name change made via the session update() call.
+      // NOTE: never store the profile image here — base64 images overflow the
+      // cookie/header size limit (HTTP 431). Images live in the DB and are
+      // passed to the UI via server props instead.
+      if (trigger === "update" && session && typeof session.name === "string") {
+        token.name = session.name
       }
       return token
     },

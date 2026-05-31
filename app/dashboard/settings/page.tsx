@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 import { SettingsContent } from "./SettingsContent"
 import { redirect } from "next/navigation"
 
@@ -9,9 +10,23 @@ export const metadata = {
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session?.user) {
     redirect("/login")
+  }
+
+  // Image lives in the DB (not the session cookie), so load it here.
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { name: true, email: true, image: true },
+  })
+
+  const user = {
+    id: session.user.id,
+    role: session.user.role,
+    name: dbUser?.name ?? session.user.name,
+    email: dbUser?.email ?? session.user.email,
+    image: dbUser?.image ?? null,
   }
 
   return (
@@ -23,7 +38,7 @@ export default async function SettingsPage() {
         </div>
       </div>
       
-      <SettingsContent user={session.user} />
+      <SettingsContent user={user} />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
 
 const roleRouteMap: Record<string, string[]> = {
+  '/dashboard/activities': ['SUPER_ADMIN', 'TRUST_MGMT', 'PROGRAM_MANAGER', 'MEO_OFFICER', 'SCHOOL_AUTHORITY', 'HOSTEL_INCHARGE', 'RFL_COORDINATOR'],
   '/dashboard/users': ['SUPER_ADMIN'],
   '/dashboard/reports': ['SUPER_ADMIN', 'TRUST_MGMT', 'PROGRAM_MANAGER', 'MEO_OFFICER'],
   '/dashboard/rfl': ['SUPER_ADMIN', 'TRUST_MGMT', 'PROGRAM_MANAGER', 'MEO_OFFICER', 'RFL_COORDINATOR'],

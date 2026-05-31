@@ -22,6 +22,7 @@ model User {
   name      String
   email     String   @unique
   password  String
+  image     String?
   role      Role     @default(SUPER_ADMIN)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -124,6 +125,22 @@ enum SponsorshipStatus {
   EXPIRED
   PENDING
   CANCELLED
+}
+
+model Activity {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  date          DateTime
+  location      String?
+  notes         String?
+  images        String[]
+  createdBy     String
+  createdByName String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([date])
 }
 
 model AuditLog {

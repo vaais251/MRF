@@ -21,6 +21,19 @@ export default function LoginPage() {
   const [cooldownTime, setCooldownTime] = useState(0)
   const [isShaking, setIsShaking] = useState(false)
   const [passwordFocused, setPasswordFocused] = useState(false)
+  // Generated on the client only (after mount) so server/client HTML match — no hydration mismatch.
+  const [particles, setParticles] = useState<{ size: number; left: number; duration: number; delay: number }[]>([])
+
+  useEffect(() => {
+    setParticles(
+      Array.from({ length: 20 }, () => ({
+        size: Math.random() * 8 + 2,
+        left: Math.random() * 100,
+        duration: Math.random() * 12 + 8,
+        delay: Math.random() * 20,
+      }))
+    )
+  }, [])
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
@@ -98,26 +111,26 @@ export default function LoginPage() {
         
         {/* Animated Particles */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          {[...Array(20)].map((_, i) => (
+          {particles.map((p, i) => (
             <div
               key={i}
               className="absolute rounded-full bg-mrt-gold opacity-20"
               style={{
-                width: Math.random() * 8 + 2 + "px",
-                height: Math.random() * 8 + 2 + "px",
-                left: Math.random() * 100 + "%",
+                width: p.size + "px",
+                height: p.size + "px",
+                left: p.left + "%",
                 top: "100%",
-                animation: `floatUp ${Math.random() * 12 + 8}s linear infinite`,
-                animationDelay: `-${Math.random() * 20}s`
+                animation: `floatUp ${p.duration}s linear infinite`,
+                animationDelay: `-${p.delay}s`,
               }}
             />
           ))}
           <style jsx>{`
             @keyframes floatUp {
               0% { top: 100%; opacity: 0; transform: translateX(0); }
-              10% { opacity: ${Math.random() * 0.4 + 0.1}; }
-              90% { opacity: ${Math.random() * 0.4 + 0.1}; }
-              100% { top: -10%; opacity: 0; transform: translateX(${Math.random() * 100 - 50}px); }
+              10% { opacity: 0.25; }
+              90% { opacity: 0.25; }
+              100% { top: -10%; opacity: 0; transform: translateX(20px); }
             }
           `}</style>
         </div>

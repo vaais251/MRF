@@ -1,22 +1,63 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { User, Shield, Sliders, Loader2, Camera, Check } from "lucide-react"
+import { User, Shield, Loader2, Camera, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { useTheme } from "next-themes"
+import { Avatar } from "@/components/Avatar"
+import { fileToResizedDataUrl } from "@/lib/image"
 
 export function SettingsContent({ user }: { user: any }) {
   const { update } = useSession()
-  const { theme, setTheme } = useTheme()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("profile")
-  
+
   // Profile State
   const [name, setName] = useState(user.name || "")
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
+
+  // Profile picture state
+  const [image, setImage] = useState<string | null>(user.image || null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const saveImage = async (nextImage: string | null) => {
+    setIsUploadingImage(true)
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: nextImage ?? "" }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || "Failed to update picture")
+      }
+      setImage(nextImage)
+      router.refresh() // re-render server components (shell avatar) with the new image
+      toast.success(nextImage ? "Profile picture updated" : "Profile picture removed")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update picture")
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
+  const handleSelectImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = "" // allow re-selecting the same file
+    if (!file) return
+    try {
+      const dataUrl = await fileToResizedDataUrl(file, { maxSize: 256, quality: 0.85 })
+      await saveImage(dataUrl)
+    } catch (error: any) {
+      toast.error(error.message || "Could not process image")
+    }
+  }
 
   // Security State
   const [currentPassword, setCurrentPassword] = useState("")
@@ -79,7 +120,6 @@ export function SettingsContent({ user }: { user: any }) {
   const tabs = [
     { id: "profile", label: "My Profile", icon: User },
     { id: "security", label: "Security", icon: Shield },
-    { id: "preferences", label: "Preferences", icon: Sliders },
   ]
 
   return (
@@ -114,18 +154,55 @@ export function SettingsContent({ user }: { user: any }) {
             
             <div className="flex items-center gap-6 mb-8">
               <div className="relative group">
-                <div className="w-24 h-24 rounded-full bg-mrt-gold text-white flex items-center justify-center text-3xl font-bold font-playfair shadow-lg">
-                  {user.name?.charAt(0).toUpperCase()}
-                </div>
-                <button className="absolute inset-0 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Camera className="w-6 h-6" />
+                <Avatar
+                  name={name || user.name}
+                  image={image}
+                  className="w-24 h-24 bg-mrt-gold text-white shadow-lg"
+                  textClassName="text-3xl font-playfair"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingImage}
+                  aria-label="Change profile picture"
+                  className="absolute inset-0 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity disabled:opacity-100"
+                >
+                  {isUploadingImage ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
                 </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleSelectImage}
+                />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900 dark:text-white">{user.name}</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-white">{name || user.name}</h3>
                 <span className="inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 uppercase">
                   {user.role.replace('_', ' ')}
                 </span>
+                <div className="mt-3 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                    className="text-sm font-medium text-mrt-navy dark:text-mrt-gold hover:underline disabled:opacity-50"
+                  >
+                    {image ? "Change photo" : "Upload photo"}
+                  </button>
+                  {image && (
+                    <button
+                      type="button"
+                      onClick={() => saveImage(null)}
+                      disabled={isUploadingImage}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-red-500 hover:text-red-600 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Remove
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-slate-400">JPG or PNG, automatically resized.</p>
               </div>
             </div>
 
@@ -203,32 +280,6 @@ export function SettingsContent({ user }: { user: any }) {
           </div>
         )}
 
-        {activeTab === "preferences" && (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-100 dark:border-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Preferences</h2>
-            
-            <div className="space-y-8 max-w-md">
-              <div className="space-y-3">
-                <h3 className="font-semibold text-slate-900 dark:text-white">Theme</h3>
-                <div className="flex gap-3">
-                  {['light', 'dark', 'system'].map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTheme(t)}
-                      className={`flex-1 flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
-                        theme === t 
-                          ? "border-mrt-gold bg-mrt-gold/5" 
-                          : "border-slate-200 dark:border-slate-700 hover:border-mrt-gold/50"
-                      }`}
-                    >
-                      <span className="capitalize font-medium text-slate-700 dark:text-slate-300">{t}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

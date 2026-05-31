@@ -7,7 +7,8 @@ import { AppProgressBar as ProgressBar } from 'next-nprogress-bar';
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      {/* App is locked to its light design; forcedTheme keeps every surface consistent. */}
+      <ThemeProvider attribute="class" forcedTheme="light" enableSystem={false}>
         {children}
         <ProgressBar
           height="3px"
