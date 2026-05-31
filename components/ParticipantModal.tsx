@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { X, Plus, Trash2, Loader2 } from "lucide-react"
+import { X, Plus, Trash2, Loader2, Camera } from "lucide-react"
 import { toast } from "sonner"
+import { Avatar } from "@/components/Avatar"
+import { fileToResizedDataUrl, PROFILE_IMAGE } from "@/lib/image"
 
 const academicResultSchema = z.object({
   subjectName: z.string().min(1, "Required"),
@@ -39,6 +41,23 @@ interface ParticipantModalProps {
 export function ParticipantModal({ isOpen, onClose, participant, onSuccess }: ParticipantModalProps) {
   const isEdit = !!participant
   const [isLoading, setIsLoading] = useState(false)
+  const [image, setImage] = useState<string | null>(null)
+  const [isProcessingImage, setIsProcessingImage] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleSelectImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    setIsProcessingImage(true)
+    try {
+      setImage(await fileToResizedDataUrl(file, PROFILE_IMAGE))
+    } catch (error: any) {
+      toast.error(error.message || "Could not process image")
+    } finally {
+      setIsProcessingImage(false)
+    }
+  }
 
   const { register, control, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<ParticipantFormValues>({
     resolver: zodResolver(participantSchema),
@@ -60,6 +79,7 @@ export function ParticipantModal({ isOpen, onClose, participant, onSuccess }: Pa
   })
 
   const startYear = watch("startYear")
+  const watchedName = watch("name")
 
   useEffect(() => {
     if (startYear && !isEdit) {
@@ -69,6 +89,7 @@ export function ParticipantModal({ isOpen, onClose, participant, onSuccess }: Pa
 
   useEffect(() => {
     if (isOpen) {
+      setImage(participant?.image || null)
       if (participant) {
         reset({
           name: participant.name,
@@ -106,7 +127,7 @@ export function ParticipantModal({ isOpen, onClose, participant, onSuccess }: Pa
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ ...data, image })
       })
 
       if (!res.ok) {
@@ -140,7 +161,51 @@ export function ParticipantModal({ isOpen, onClose, participant, onSuccess }: Pa
         {/* Form Body */}
         <div className="flex-1 overflow-y-auto p-6">
           <form id="participant-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 font-dm-sans">
-            
+
+            {/* Profile photo */}
+            <div className="flex items-center gap-5">
+              <div className="relative group shrink-0">
+                <Avatar
+                  name={watchedName}
+                  image={image}
+                  className="w-20 h-20 bg-[#C9A84C]/20 text-[#C9A84C] text-2xl border border-slate-100"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessingImage}
+                  aria-label="Add participant photo"
+                  className="absolute inset-0 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity disabled:opacity-100"
+                >
+                  {isProcessingImage ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
+                </button>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleSelectImage} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-700">Participant Photo</p>
+                <div className="mt-1.5 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isProcessingImage}
+                    className="text-sm font-medium text-[#C9A84C] hover:text-[#B8943D] disabled:opacity-50"
+                  >
+                    {image ? "Change photo" : "Upload photo"}
+                  </button>
+                  {image && (
+                    <button
+                      type="button"
+                      onClick={() => setImage(null)}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-red-500 hover:text-red-600"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Remove
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-slate-400">Optional · JPG or PNG, auto-resized.</p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left Column */}
               <div className="space-y-4">

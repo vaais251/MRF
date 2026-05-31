@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, ArrowUpDown
 } from "lucide-react"
 import { ParticipantModal } from "@/components/ParticipantModal"
+import { Avatar } from "@/components/Avatar"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
@@ -216,9 +217,7 @@ export default function ParticipantsPage() {
                     <td className="px-6 py-4 text-slate-400">{(page - 1) * 10 + idx + 1}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#C9A84C]/20 flex items-center justify-center text-[#C9A84C] font-bold text-xs shrink-0">
-                          {p.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
-                        </div>
+                        <Avatar name={p.name} image={p.image} className="w-8 h-8 bg-[#C9A84C]/20 text-[#C9A84C] text-xs shrink-0" />
                         <span className="font-semibold text-slate-800">{p.name}</span>
                       </div>
                     </td>

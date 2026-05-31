@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { ParticipantModal } from "@/components/ParticipantModal"
+import { Avatar } from "@/components/Avatar"
 
 export default function ParticipantDetailPage() {
   const params = useParams()
@@ -66,8 +67,6 @@ export default function ParticipantDetailPage() {
 
   if (!participant) return null
 
-  const initials = participant.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Top Navigation */}
@@ -97,9 +96,7 @@ export default function ParticipantDetailPage() {
             
             <div className="p-8 pb-6 border-b border-slate-100">
               <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-                <div className="w-20 h-20 rounded-full bg-[#C9A84C]/20 flex items-center justify-center text-[#C9A84C] font-bold text-2xl shrink-0 shadow-inner">
-                  {initials}
-                </div>
+                <Avatar name={participant.name} image={participant.image} className="w-20 h-20 bg-[#C9A84C]/20 text-[#C9A84C] text-2xl shrink-0 shadow-inner" />
                 <div>
                   <h1 className="text-3xl font-playfair font-bold text-slate-800 mb-2">{participant.name}</h1>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${getStatusColor(participant.status)}`}>

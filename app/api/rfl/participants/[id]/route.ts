@@ -41,7 +41,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const body = await req.json()
-    const { name, program, institute, startYear, endYear, currentSemester, academicResults, status } = body
+    const { name, program, institute, startYear, endYear, currentSemester, academicResults, status, image } = body
+
+    if (typeof image === "string" && image && !image.startsWith("data:image/")) {
+      return NextResponse.json({ error: "Invalid image format" }, { status: 400 })
+    }
+    if (typeof image === "string" && image.length > 500_000) {
+      return NextResponse.json({ error: "Image is too large" }, { status: 413 })
+    }
 
     const participant = await prisma.rFLParticipant.update({
       where: { id: params.id },
@@ -53,7 +60,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         endYear: endYear ? parseInt(endYear) : undefined,
         currentSemester: currentSemester ? parseInt(currentSemester) : undefined,
         academicResults,
-        status
+        status,
+        image: image === undefined ? undefined : (image || null)
       }
     })
 

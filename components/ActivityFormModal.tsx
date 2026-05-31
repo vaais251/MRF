@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { X, Loader2, ImagePlus, Trash2, CalendarDays } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
-import { fileToResizedDataUrl } from "@/lib/image"
+import { fileToResizedDataUrl, ACTIVITY_IMAGE } from "@/lib/image"
 
 const MAX_IMAGES = 10
 
@@ -68,7 +68,7 @@ export function ActivityFormModal({ isOpen, onClose, activity, onSuccess }: Acti
     setIsProcessing(true)
     try {
       const processed = await Promise.all(
-        toProcess.map((file) => fileToResizedDataUrl(file, { maxSize: 1280, quality: 0.82 }))
+        toProcess.map((file) => fileToResizedDataUrl(file, ACTIVITY_IMAGE))
       )
       setImages((prev) => [...prev, ...processed])
     } catch (error: any) {

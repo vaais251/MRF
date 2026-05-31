@@ -71,10 +71,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, program, institute, startYear, endYear, currentSemester, academicResults, status } = body
+    const { name, program, institute, startYear, endYear, currentSemester, academicResults, status, image } = body
 
     if (!name || !program || !institute || !startYear || !endYear || !currentSemester) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    if (typeof image === "string" && image && !image.startsWith("data:image/")) {
+      return NextResponse.json({ error: "Invalid image format" }, { status: 400 })
+    }
+    if (typeof image === "string" && image.length > 500_000) {
+      return NextResponse.json({ error: "Image is too large" }, { status: 413 })
     }
 
     const participant = await prisma.rFLParticipant.create({
@@ -87,6 +94,7 @@ export async function POST(req: NextRequest) {
         currentSemester: parseInt(currentSemester),
         academicResults: academicResults || [],
         status: status || "ACTIVE",
+        image: image || null,
         createdBy: session.user.id
       }
     })

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { Avatar } from "@/components/Avatar"
-import { fileToResizedDataUrl } from "@/lib/image"
+import { fileToResizedDataUrl, PROFILE_IMAGE } from "@/lib/image"
 
 export function SettingsContent({ user }: { user: any }) {
   const { update } = useSession()
@@ -52,7 +52,7 @@ export function SettingsContent({ user }: { user: any }) {
     e.target.value = "" // allow re-selecting the same file
     if (!file) return
     try {
-      const dataUrl = await fileToResizedDataUrl(file, { maxSize: 256, quality: 0.85 })
+      const dataUrl = await fileToResizedDataUrl(file, PROFILE_IMAGE)
       await saveImage(dataUrl)
     } catch (error: any) {
       toast.error(error.message || "Could not process image")

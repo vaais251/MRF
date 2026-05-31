@@ -199,24 +199,23 @@ export default async function DashboardIndex() {
           </h3>
           <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative">
             {recentLogs.length > 0 ? (
-              <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 dark:before:via-slate-700 before:to-transparent">
+              <ol className="relative ml-2 border-l border-slate-200 dark:border-slate-700 space-y-6">
                 {recentLogs.map((log) => (
-                  <div key={log.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10 group-hover:bg-mrt-gold group-hover:text-white transition-colors">
-                      <Activity className="w-4 h-4" />
+                  <li key={log.id} className="relative pl-6 group">
+                    <span className="absolute -left-[7px] top-1.5 w-3.5 h-3.5 rounded-full bg-slate-200 dark:bg-slate-700 ring-4 ring-white dark:ring-slate-900 group-hover:bg-mrt-gold transition-colors" />
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1">
+                      <span className="text-xs font-semibold text-mrt-gold uppercase tracking-wider">{log.action}</span>
+                      <span className="text-slate-300 dark:text-slate-600">·</span>
+                      <time className="text-xs text-slate-400 whitespace-nowrap">
+                        {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
+                      </time>
                     </div>
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm group-hover:border-mrt-gold/30 transition-colors">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-mrt-gold uppercase tracking-wider">{log.action}</span>
-                        <time className="text-xs text-slate-500">{formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}</time>
-                      </div>
-                      <div className="text-sm text-slate-700 dark:text-slate-300">
-                        {log.description}
-                      </div>
-                    </div>
-                  </div>
+                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-snug">
+                      {log.description}
+                    </p>
+                  </li>
                 ))}
-              </div>
+              </ol>
             ) : (
               <div className="text-center py-8">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 mb-3">

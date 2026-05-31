@@ -43,6 +43,7 @@ enum SessionType {
 model RFLParticipant {
   id                String            @id @default(cuid())
   name              String
+  image             String?
   program           String
   institute         String
   startYear         Int

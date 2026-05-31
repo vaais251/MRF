@@ -20,8 +20,8 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Name cannot be empty" }, { status: 400 })
     }
 
-    // Guard against oversized payloads (base64 ~33% larger than the binary)
-    if (typeof image === "string" && image.length > 3_000_000) {
+    // Backstop guard (the client compresses profile images to ~120KB; this is the safety net).
+    if (typeof image === "string" && image.length > 500_000) {
       return NextResponse.json({ error: "Image is too large" }, { status: 413 })
     }
     if (typeof image === "string" && !image.startsWith("data:image/")) {

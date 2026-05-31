@@ -7,7 +7,7 @@ import type { Session } from "next-auth"
 import { Camera, Settings, LogOut, ChevronDown, Trash2, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar } from "./Avatar"
-import { fileToResizedDataUrl } from "@/lib/image"
+import { fileToResizedDataUrl, PROFILE_IMAGE } from "@/lib/image"
 
 export function UserMenu({ session, initialImage }: { session: Session; initialImage: string | null }) {
   const router = useRouter()
@@ -67,7 +67,7 @@ export function UserMenu({ session, initialImage }: { session: Session; initialI
     e.target.value = ""
     if (!file) return
     try {
-      const dataUrl = await fileToResizedDataUrl(file, { maxSize: 256, quality: 0.85 })
+      const dataUrl = await fileToResizedDataUrl(file, PROFILE_IMAGE)
       await saveImage(dataUrl)
     } catch (error: any) {
       toast.error(error.message || "Could not process image")
