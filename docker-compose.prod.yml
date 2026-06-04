@@ -5,9 +5,13 @@ services:
       target: runner
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      # Inside Docker the database is reached at the service name "db", NOT localhost.
+      # Hardcoded (not ${DATABASE_URL}) so a dev .env with localhost can't override it.
+      # Credentials match the db service below.
+      - DATABASE_URL=postgresql://mrt_user:mrt_pass@db:5432/mrt_db?schema=public
+      # IMPORTANT: set a strong NEXTAUTH_SECRET (and your server URL) in a .env file for real deployments.
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-please_change_this_to_a_random_secret}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
     depends_on:
       db:
         condition: service_healthy
