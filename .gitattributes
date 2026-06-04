@@ -1,0 +1,20 @@
+# Normalize line endings. Force LF in the working tree so shell scripts and
+# config consumed inside Linux/Docker containers never get Windows CRLF
+# (CRLF in a shebang makes Alpine report the script as "not found").
+* text=auto eol=lf
+
+# Shell scripts and container/config files must always be LF.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Binary assets — never normalize.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

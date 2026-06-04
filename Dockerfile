@@ -25,11 +25,16 @@ RUN npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
-RUN apk add --no-cache openssl
+# openssl + libc6-compat are required by the Prisma engines on Alpine (musl)
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
+
+# Prisma CLI is needed at startup for `prisma migrate deploy`. The Next.js
+# standalone output strips it, so install it (pinned to match @prisma/client).
+RUN npm install -g prisma@5.22.0
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -47,8 +52,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/scripts ./scripts
 
-# Set permissions for scripts
-RUN chmod +x ./scripts/migrate-and-seed.sh
+# Normalize line endings (defends against a CRLF checkout) and make executable
+RUN sed -i 's/\r$//' ./scripts/migrate-and-seed.sh \
+ && chmod +x ./scripts/migrate-and-seed.sh
 
 USER nextjs
 

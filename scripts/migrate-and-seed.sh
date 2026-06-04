@@ -1,6 +1,7 @@
 #!/bin/sh
+set -e
 echo "Running migrations..."
-npx prisma migrate deploy
+prisma migrate deploy
 echo "Seeding database..."
-npx prisma db seed
+node scripts/seed.js
 echo "Done!"
