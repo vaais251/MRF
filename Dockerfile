@@ -56,6 +56,10 @@ COPY --from=builder /app/scripts ./scripts
 RUN sed -i 's/\r$//' ./scripts/migrate-and-seed.sh \
  && chmod +x ./scripts/migrate-and-seed.sh
 
+# Let the non-root runtime user write to Prisma dirs, so any prisma command
+# (or an accidental `generate`) doesn't fail with a permissions error.
+RUN chown -R nextjs:nodejs /usr/local/lib/node_modules /app/prisma /app/scripts
+
 USER nextjs
 
 EXPOSE 3000
