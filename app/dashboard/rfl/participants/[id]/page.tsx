@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { format } from "date-fns"
-import { 
-  ArrowLeft, Edit, GraduationCap, School, Calendar, 
+import {
+  ArrowLeft, Edit, GraduationCap, School, Calendar, Book,
   Clock, Plus, ChevronDown, ChevronUp, Loader2
 } from "lucide-react"
 import { toast } from "sonner"
@@ -66,6 +66,35 @@ export default function ParticipantDetailPage() {
   }
 
   if (!participant) return null
+
+  const yearLabel = (y: number) => ["1st", "2nd", "3rd", "4th"][y - 1] || `${y}th`
+  const courseDetail = (() => {
+    switch (participant.courseType) {
+      case "Annual": return { label: "Current Year", value: participant.currentYear ? `${yearLabel(participant.currentYear)} year` : "—" }
+      case "Semester System": return { label: "Current Semester", value: participant.currentSemester ? `Semester ${participant.currentSemester}` : "—" }
+      case "Course": return { label: "Course Duration", value: participant.duration || "—" }
+      case "Other": return { label: "Field Remarks", value: participant.fieldRemarks || "—" }
+      default: return { label: "Current Semester", value: participant.currentSemester ? `Semester ${participant.currentSemester}` : "—" }
+    }
+  })()
+
+  // Normalize results (supports old {subjectName, semester, grade} shape)
+  const results = (Array.isArray(participant.academicResults) ? participant.academicResults : []).map((r: any) => ({
+    name: r.name ?? r.subjectName ?? "",
+    period: r.period ?? (r.semester ? `Semester ${r.semester}` : ""),
+    grade: r.grade ?? "",
+    percentage: r.percentage ?? "",
+    gpa: r.gpa ?? "",
+    cgpa: r.cgpa ?? "",
+    comments: r.comments ?? "",
+    file: r.file ?? null,
+  }))
+  const scoreText = (r: any) => {
+    if ((r.period || "").startsWith("Semester")) {
+      return [r.percentage && `${r.percentage}%`, r.gpa && `GPA ${r.gpa}`, r.cgpa && `CGPA ${r.cgpa}`].filter(Boolean).join(" · ") || "—"
+    }
+    return r.grade || "—"
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -133,8 +162,18 @@ export default function ParticipantDetailPage() {
                     <Calendar className="w-5 h-5 text-purple-500" />
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Duration</div>
+                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Years</div>
                     <div className="font-medium text-slate-700">{participant.startYear} — {participant.endYear}</div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
+                    <Book className="w-5 h-5 text-indigo-500" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Course Type</div>
+                    <div className="font-medium text-slate-700">{participant.courseType || "—"}</div>
                   </div>
                 </div>
 
@@ -143,8 +182,8 @@ export default function ParticipantDetailPage() {
                     <Clock className="w-5 h-5 text-amber-500" />
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Current Semester</div>
-                    <div className="font-medium text-slate-700">Semester {participant.currentSemester}</div>
+                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{courseDetail.label}</div>
+                    <div className="font-medium text-slate-700">{courseDetail.value}</div>
                   </div>
                 </div>
               </div>
@@ -153,33 +192,37 @@ export default function ParticipantDetailPage() {
             {/* Academic Results Table */}
             <div className="p-8 pt-0 bg-slate-50/30">
               <h3 className="font-playfair text-lg font-bold text-slate-800 mb-4 pt-6 border-t border-slate-200">Academic Results</h3>
-              {participant.academicResults && participant.academicResults.length > 0 ? (
+              {results.length > 0 ? (
                 <div className="overflow-hidden rounded-xl border border-slate-200">
                   <table className="w-full text-left text-sm">
                     <thead className="bg-white text-slate-500 text-xs uppercase font-semibold">
                       <tr>
-                        <th className="px-4 py-3 border-b border-slate-200">Subject</th>
-                        <th className="px-4 py-3 border-b border-slate-200">Semester</th>
-                        <th className="px-4 py-3 border-b border-slate-200 text-right">Grade</th>
+                        <th className="px-4 py-3 border-b border-slate-200">Result</th>
+                        <th className="px-4 py-3 border-b border-slate-200">Period</th>
+                        <th className="px-4 py-3 border-b border-slate-200">Score</th>
+                        <th className="px-4 py-3 border-b border-slate-200">Comments</th>
+                        <th className="px-4 py-3 border-b border-slate-200 text-right">File</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
-                      {[...participant.academicResults]
-                        .sort((a, b) => Number(b.semester) - Number(a.semester))
-                        .map((res: unknown, idx) => {
-                          const result = res as { subjectName: string, semester: number | string, grade: string }
-                          return (
-                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-3 font-medium text-slate-700">{result.subjectName}</td>
-                          <td className="px-4 py-3 text-slate-500">Sem {result.semester}</td>
+                      {results.map((r: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-slate-50 transition-colors align-top">
+                          <td className="px-4 py-3 font-medium text-slate-700">{r.name || "—"}</td>
+                          <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{r.period || "—"}</td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex px-2 py-1 bg-slate-100 rounded-md font-semibold text-slate-700">{scoreText(r)}</span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 max-w-[14rem]">{r.comments || "—"}</td>
                           <td className="px-4 py-3 text-right">
-                            <span className="inline-flex px-2 py-1 bg-slate-100 rounded-md font-bold text-slate-700">
-                              {result.grade}
-                            </span>
+                            {r.file ? (
+                              <a href={r.file} target="_blank" rel="noopener noreferrer" className="inline-block">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={r.file} alt="Result" className="h-10 w-10 rounded object-cover border border-slate-200 ml-auto" />
+                              </a>
+                            ) : <span className="text-slate-300">—</span>}
                           </td>
                         </tr>
-                      )
-                      })}
+                      ))}
                     </tbody>
                   </table>
                 </div>

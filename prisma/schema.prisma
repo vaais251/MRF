@@ -48,7 +48,11 @@ model RFLParticipant {
   institute         String
   startYear         Int
   endYear           Int
-  currentSemester   Int
+  courseType        String?           // Annual | Semester System | Course | Other
+  currentSemester   Int?              // for "Semester System" (1-10)
+  currentYear       Int?              // for "Annual" (1-4)
+  duration          String?           // for "Course"
+  fieldRemarks      String?           // for "Other"
   academicResults   Json
   status            ParticipantStatus @default(ACTIVE)
   createdAt         DateTime          @default(now())

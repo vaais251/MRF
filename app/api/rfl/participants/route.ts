@@ -71,9 +71,9 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, program, institute, startYear, endYear, currentSemester, academicResults, status, image } = body
+    const { name, program, institute, startYear, endYear, courseType, currentSemester, currentYear, duration, fieldRemarks, academicResults, status, image } = body
 
-    if (!name || !program || !institute || !startYear || !endYear || !currentSemester) {
+    if (!name || !program || !institute || !startYear || !endYear) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -91,7 +91,11 @@ export async function POST(req: NextRequest) {
         institute,
         startYear: parseInt(startYear),
         endYear: parseInt(endYear),
-        currentSemester: parseInt(currentSemester),
+        courseType: courseType || null,
+        currentSemester: currentSemester ? parseInt(currentSemester) : null,
+        currentYear: currentYear ? parseInt(currentYear) : null,
+        duration: duration || null,
+        fieldRemarks: fieldRemarks || null,
         academicResults: academicResults || [],
         status: status || "ACTIVE",
         image: image || null,

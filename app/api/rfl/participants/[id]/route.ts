@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const body = await req.json()
-    const { name, program, institute, startYear, endYear, currentSemester, academicResults, status, image } = body
+    const { name, program, institute, startYear, endYear, courseType, currentSemester, currentYear, duration, fieldRemarks, academicResults, status, image } = body
 
     if (typeof image === "string" && image && !image.startsWith("data:image/")) {
       return NextResponse.json({ error: "Invalid image format" }, { status: 400 })
@@ -58,7 +58,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         institute,
         startYear: startYear ? parseInt(startYear) : undefined,
         endYear: endYear ? parseInt(endYear) : undefined,
-        currentSemester: currentSemester ? parseInt(currentSemester) : undefined,
+        courseType: courseType ?? undefined,
+        currentSemester: currentSemester ? parseInt(currentSemester) : null,
+        currentYear: currentYear ? parseInt(currentYear) : null,
+        duration: duration ?? null,
+        fieldRemarks: fieldRemarks ?? null,
         academicResults,
         status,
         image: image === undefined ? undefined : (image || null)
