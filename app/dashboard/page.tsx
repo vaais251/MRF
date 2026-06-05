@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { NoticeBanner } from "@/components/NoticeBanner"
 import { Greeting } from "@/components/Greeting"
-import { Book, Users, GraduationCap, Award, ArrowRight, ShieldCheck, Activity, UserPlus, Calendar, Gift, FileText, Settings } from "lucide-react"
+import { Book, Users, GraduationCap, School, ArrowRight, ShieldCheck, Activity, UserPlus, Calendar, Gift, FileText, Settings } from "lucide-react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 
@@ -19,32 +19,13 @@ export default async function DashboardIndex() {
 
   const isSuper = user.role === "SUPER_ADMIN" || user.role === "TRUST_MGMT"
 
-  // Fetch stats based on role
-  let stats = {
-    participants: 0,
-    mentorships: 0,
-    alumni: 0,
-    sponsorships: 0,
-    users: 0,
-  }
-
-  if (isSuper) {
-    const [p, m, a, s, u] = await Promise.all([
-      prisma.rFLParticipant.count(),
-      prisma.rFLMentorship.count(),
-      prisma.rFLAlumni.count(),
-      prisma.rFLSponsorship.count({ where: { status: "ACTIVE" } }),
-      prisma.user.count(),
-    ])
-    stats = { participants: p, mentorships: m, alumni: a, sponsorships: s, users: u }
-  } else {
-    const [p, m, a, s] = await Promise.all([
-      prisma.rFLParticipant.count(),
-      prisma.rFLMentorship.count(),
-      prisma.rFLAlumni.count(),
-      prisma.rFLSponsorship.count({ where: { status: "ACTIVE" } }),
-    ])
-    stats = { participants: p, mentorships: m, alumni: a, sponsorships: s, users: 0 }
+  // General dashboard: total strength per program.
+  // MRHSS and MRA modules aren't built yet, so they show 0 for now.
+  const rflStrength = await prisma.rFLParticipant.count()
+  const stats = {
+    mrhss: 0,
+    mra: 0,
+    rfl: rflStrength,
   }
 
   // Fetch user's recent activity
@@ -75,46 +56,36 @@ export default async function DashboardIndex() {
         <Book className="absolute -right-8 -bottom-16 w-64 h-64 text-mrt-gold opacity-[0.03] dark:opacity-[0.05] rotate-12 pointer-events-none" />
       </div>
 
-      {/* Quick Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Program Strength Overview */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-mrt-gold/50 transition-colors">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-500 dark:text-slate-400">Total Participants</h3>
+            <h3 className="font-semibold text-slate-500 dark:text-slate-400">MRHSS Total Strength</h3>
             <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg">
+              <School className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.mrhss}</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-mrt-gold/50 transition-colors">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-slate-500 dark:text-slate-400">MRA Total Strength</h3>
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg">
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.participants}</p>
+          <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.mra}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-mrt-gold/50 transition-colors">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-500 dark:text-slate-400">Mentorships</h3>
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg">
-              <Book className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.mentorships}</p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-mrt-gold/50 transition-colors">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-500 dark:text-slate-400">Alumni</h3>
+            <h3 className="font-semibold text-slate-500 dark:text-slate-400">RFL Total Strength</h3>
             <div className="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg">
               <GraduationCap className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.alumni}</p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-mrt-gold/50 transition-colors">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-500 dark:text-slate-400">Active Sponsorships</h3>
-            <div className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg">
-              <Award className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.sponsorships}</p>
+          <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.rfl}</p>
         </div>
       </div>
 

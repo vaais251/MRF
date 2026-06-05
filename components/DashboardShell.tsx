@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import {
   Book, LayoutDashboard, GraduationCap, School, Users,
-  UserCog, BarChart3, LogOut, Menu, X, ChevronDown, CalendarDays
+  UserCog, BarChart3, LogOut, Menu, X, ChevronDown
 } from "lucide-react"
 import type { Session } from "next-auth"
 import { cn } from "@/lib/utils"
@@ -42,8 +42,7 @@ const NAVIGATION: NavGroup[] = [
   {
     group: "OVERVIEW",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "SCHOOL_AUTHORITY", "HOSTEL_INCHARGE", "RFL_COORDINATOR"] },
-      { label: "Activities", href: "/dashboard/activities", icon: CalendarDays, roles: ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "SCHOOL_AUTHORITY", "HOSTEL_INCHARGE", "RFL_COORDINATOR"] }
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "SCHOOL_AUTHORITY", "HOSTEL_INCHARGE", "RFL_COORDINATOR"] }
     ]
   },
   { 
@@ -60,6 +59,7 @@ const NAVIGATION: NavGroup[] = [
           { label: "Mentorship", href: "/dashboard/rfl/mentorship" },
           { label: "Alumni", href: "/dashboard/rfl/alumni" },
           { label: "Sponsorships", href: "/dashboard/rfl/sponsorships" },
+          { label: "Activities", href: "/dashboard/activities" },
         ]
       },
       { label: "MRHSS", href: "/dashboard/mrhss", icon: School, roles: ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "SCHOOL_AUTHORITY"], disabled: true },

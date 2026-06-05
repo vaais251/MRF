@@ -156,14 +156,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="relative z-10 max-w-md mt-20 mb-auto">
-          <h2 className="font-playfair text-4xl md:text-5xl font-bold text-white leading-tight mb-6">
-            Empowering <span className="text-mrt-gold">Education,</span><br/> Transforming Lives
-          </h2>
-          <p className="text-slate-300 text-lg">
-            A comprehensive platform to track, manage, and elevate educational initiatives across all our programs.
-          </p>
-        </div>
+        <div className="relative z-10 mb-auto" />
 
         <div className="relative z-10 flex gap-4">
           {['MRHSS', 'MRA', 'RFL'].map((badge) => (
@@ -286,12 +279,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          <div className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            <a href="#" className="hover:text-mrt-navy dark:hover:text-mrt-gold transition-colors font-medium">
-              Need help? Contact IT Support
-            </a>
-          </div>
 
           <div className="mt-12 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700/50">
             <p className="text-xs text-slate-500 dark:text-slate-400 font-mono text-center">
