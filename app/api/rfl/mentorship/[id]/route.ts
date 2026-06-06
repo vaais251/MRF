@@ -13,17 +13,18 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const body = await req.json()
-    const { participantId, mentorName, sessionType, sessionDate, targetAudience, notes } = body
+    const { participantId, mentorName, sessionType, sessionDate, targetAudience, notes, images } = body
 
     const sessionData = await prisma.rFLMentorship.update({
       where: { id: params.id },
       data: {
-        participantId,
+        participantId: participantId === undefined ? undefined : (participantId || null),
         mentorName,
         sessionType,
         sessionDate: sessionDate ? new Date(sessionDate) : undefined,
         targetAudience,
-        notes
+        notes,
+        images: Array.isArray(images) ? images : undefined
       }
     })
 

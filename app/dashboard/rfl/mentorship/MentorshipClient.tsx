@@ -117,7 +117,7 @@ export default function MentorshipClient({ stats }: MentorshipClientProps) {
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#C9A84C] text-white font-medium hover:bg-[#B8943D] transition-colors shadow-sm active:scale-[0.98]"
           >
             <Plus className="w-5 h-5" />
-            Record Session
+            Add Session
           </button>
         )}
       </div>
@@ -251,9 +251,13 @@ export default function MentorshipClient({ stats }: MentorshipClientProps) {
                       {format(new Date(s.sessionDate), "dd MMM yyyy")}
                     </td>
                     <td className="px-6 py-4">
-                      <a href={`/dashboard/rfl/participants/${s.participantId}`} className="font-semibold text-slate-800 hover:text-[#C9A84C] transition-colors">
-                        {s.participant.name}
-                      </a>
+                      {s.participant ? (
+                        <a href={`/dashboard/rfl/participants/${s.participantId}`} className="font-semibold text-slate-800 hover:text-[#C9A84C] transition-colors">
+                          {s.participant.name}
+                        </a>
+                      ) : (
+                        <span className="text-slate-400 italic">General</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-slate-600">{s.mentorName}</td>
                     <td className="px-6 py-4">

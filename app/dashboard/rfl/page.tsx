@@ -48,7 +48,7 @@ export default async function RFLPage() {
     ...recentSessions.map(s => ({
       id: `s-${s.id}`,
       type: 'SESSION',
-      description: `Mentorship session recorded for ${s.participant.name}`,
+      description: `Mentorship session recorded for ${s.participant?.name ?? "a group"}`,
       date: s.createdAt,
       icon: HandHeart,
       color: "text-blue-500",

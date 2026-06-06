@@ -74,20 +74,25 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { participantId, mentorName, sessionType, sessionDate, targetAudience, notes } = body
+    const { participantId, mentorName, sessionType, sessionDate, targetAudience, notes, images } = body
 
-    if (!participantId || !mentorName || !sessionType || !sessionDate || !targetAudience) {
+    if (!mentorName || !sessionType || !sessionDate || !targetAudience) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    if (images !== undefined && !Array.isArray(images)) {
+      return NextResponse.json({ error: "Images must be an array" }, { status: 400 })
     }
 
     const mentorship = await prisma.rFLMentorship.create({
       data: {
-        participantId,
+        participantId: participantId || null,
         mentorName,
         sessionType,
         sessionDate: new Date(sessionDate),
         targetAudience,
-        notes
+        notes,
+        images: Array.isArray(images) ? images : []
       }
     })
 

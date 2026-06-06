@@ -64,15 +64,16 @@ model RFLParticipant {
 }
 
 model RFLMentorship {
-  id              String         @id @default(cuid())
-  participantId   String
-  participant     RFLParticipant @relation(fields: [participantId], references: [id])
+  id              String          @id @default(cuid())
+  participantId   String?
+  participant     RFLParticipant? @relation(fields: [participantId], references: [id])
   mentorName      String
   sessionType     SessionType
   sessionDate     DateTime
   targetAudience  String
   notes           String?
-  createdAt       DateTime       @default(now())
+  images          String[]
+  createdAt       DateTime        @default(now())
 
   @@index([participantId])
 }
@@ -140,12 +141,14 @@ model Activity {
   location      String?
   notes         String?
   images        String[]
+  participantId String?  // when set, this activity belongs to a specific RFL participant
   createdBy     String
   createdByName String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@index([date])
+  @@index([participantId])
 }
 
 model AuditLog {

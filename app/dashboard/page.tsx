@@ -112,7 +112,7 @@ export default async function DashboardIndex() {
                 <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg group-hover:bg-mrt-gold/10 transition-colors">
                   <Calendar className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-mrt-gold transition-colors" />
                 </div>
-                <span className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-mrt-navy dark:group-hover:text-white transition-colors">Record Session</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-mrt-navy dark:group-hover:text-white transition-colors">Add Session</span>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
             </Link>

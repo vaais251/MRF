@@ -23,7 +23,7 @@ interface Activity {
 
 const LIMIT = 12
 
-export default function ActivitiesClient({ canManage }: { canManage: boolean }) {
+export default function ActivitiesClient({ canManage, participantId, embedded }: { canManage: boolean; participantId?: string; embedded?: boolean }) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(1)
@@ -39,6 +39,7 @@ export default function ActivitiesClient({ canManage }: { canManage: boolean }) 
     setIsLoading(true)
     try {
       const query = new URLSearchParams({ page: page.toString(), limit: LIMIT.toString(), search })
+      if (participantId) query.set("participantId", participantId)
       const res = await fetch(`/api/activities?${query.toString()}`)
       if (res.ok) {
         const data = await res.json()
@@ -53,7 +54,7 @@ export default function ActivitiesClient({ canManage }: { canManage: boolean }) 
     } finally {
       setIsLoading(false)
     }
-  }, [page, search])
+  }, [page, search, participantId])
 
   useEffect(() => {
     const t = setTimeout(fetchActivities, 300)
@@ -89,9 +90,9 @@ export default function ActivitiesClient({ canManage }: { canManage: boolean }) 
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-playfair font-bold text-slate-800 dark:text-white">Activities</h2>
+          {!embedded && <h2 className="text-2xl font-playfair font-bold text-slate-800 dark:text-white">Activities</h2>}
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            School and program activities, events and highlights.
+            {embedded ? "Activities linked to this participant." : "School and program activities, events and highlights."}
           </p>
         </div>
         {canManage && (
@@ -249,6 +250,7 @@ export default function ActivitiesClient({ canManage }: { canManage: boolean }) 
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         activity={editing}
+        participantId={participantId}
         onSuccess={fetchActivities}
       />
     </div>

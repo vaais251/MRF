@@ -37,10 +37,13 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"))
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "12")))
     const search = searchParams.get("search") || ""
+    const participantId = searchParams.get("participantId")
     const skip = (page - 1) * limit
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {}
+    // Scope to a participant's activities, or the global feed (no participant) otherwise.
+    where.participantId = participantId ? participantId : null
     if (search) {
       where.OR = [
         { title: { contains: search, mode: "insensitive" } },
@@ -83,7 +86,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { title, description, date, location, notes, images } = body
+    const { title, description, date, location, notes, images, participantId } = body
 
     if (!title || !description || !date) {
       return NextResponse.json({ error: "Title, description and date are required" }, { status: 400 })
@@ -102,6 +105,7 @@ export async function POST(req: NextRequest) {
         location: location || null,
         notes: notes || null,
         images: Array.isArray(images) ? images : [],
+        participantId: participantId || null,
         createdBy: session.user.id,
         createdByName: session.user.name || null,
       },

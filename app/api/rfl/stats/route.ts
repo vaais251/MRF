@@ -70,7 +70,7 @@ export async function GET() {
       ...recentSessions.map(s => ({
         id: `s-${s.id}`,
         type: 'SESSION',
-        description: `Mentorship session recorded for ${s.participant.name}`,
+        description: `Mentorship session recorded for ${s.participant?.name ?? "a group"}`,
         date: s.createdAt
       })),
       ...recentAlumni.map(a => ({

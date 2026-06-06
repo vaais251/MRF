@@ -2,21 +2,31 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { format } from "date-fns"
 import {
   ArrowLeft, Edit, GraduationCap, School, Calendar, Book,
-  Clock, Plus, ChevronDown, ChevronUp, Loader2
+  Clock, Plus, ChevronDown, ChevronUp, Loader2, UserCircle, CalendarDays
 } from "lucide-react"
 import { toast } from "sonner"
 import { ParticipantModal } from "@/components/ParticipantModal"
+import { SessionModal } from "@/components/SessionModal"
+import ActivitiesClient from "@/app/dashboard/activities/ActivitiesClient"
 import { Avatar } from "@/components/Avatar"
 
 export default function ParticipantDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { data: session } = useSession()
+  const role = session?.user?.role || ""
+  const canManageActivities = ["SUPER_ADMIN", "RFL_COORDINATOR"].includes(role)
+  const canEditSessions = ["SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"].includes(role)
+
   const [participant, setParticipant] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<"profile" | "activities">("profile")
   const [expandedNotes, setExpandedNotes] = useState<string[]>([])
 
   const fetchParticipant = useCallback(async () => {
@@ -111,6 +121,27 @@ export default function ParticipantDetailPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-slate-200">
+        {[
+          { id: "profile", label: "Profile", icon: UserCircle },
+          { id: "activities", label: "Activities", icon: CalendarDays },
+        ].map((t) => {
+          const Icon = t.icon
+          const active = activeTab === t.id
+          return (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id as "profile" | "activities")}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${active ? "border-[#C9A84C] text-[#C9A84C]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+            >
+              <Icon className="w-4 h-4" /> {t.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {activeTab === "profile" && (
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Left Column - 60% */}
         <div className="w-full lg:w-[60%] space-y-6">
@@ -241,15 +272,17 @@ export default function ParticipantDetailPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full min-h-[500px]">
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <h3 className="font-playfair text-lg font-bold text-slate-800">Mentorship Sessions</h3>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-[#C9A84C]/30 text-[#C9A84C] font-semibold text-xs transition-all duration-200 hover:bg-[#C9A84C] hover:text-white hover:border-[#C9A84C] shadow-sm">
-                <Plus className="w-3 h-3" /> Add Session
-              </button>
+              {canEditSessions && (
+                <button onClick={() => setIsSessionModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-[#C9A84C]/30 text-[#C9A84C] font-semibold text-xs transition-all duration-200 hover:bg-[#C9A84C] hover:text-white hover:border-[#C9A84C] shadow-sm">
+                  <Plus className="w-3 h-3" /> Add Session
+                </button>
+              )}
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto space-y-4">
               {participant.mentorships && participant.mentorships.length > 0 ? (
                 (participant as unknown as { mentorships: unknown[] }).mentorships.map((sessionData: unknown) => {
-                  const session = sessionData as { id: string, mentorName: string, sessionDate: string, sessionType: string, targetAudience: string, notes?: string }
+                  const session = sessionData as { id: string, mentorName: string, sessionDate: string, sessionType: string, targetAudience: string, notes?: string, images?: string[] }
                   const isExpanded = expandedNotes.includes(session.id)
                   return (
                     <div key={session.id} className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all">
@@ -275,13 +308,24 @@ export default function ParticipantDetailPage() {
                             {session.notes}
                           </p>
                           {session.notes.length > 100 && (
-                            <button 
+                            <button
                               onClick={() => toggleNote(session.id)}
                               className="mt-1 text-xs font-medium text-[#C9A84C] flex items-center gap-1 hover:text-[#B8943D]"
                             >
                               {isExpanded ? <><ChevronUp className="w-3 h-3"/> Show Less</> : <><ChevronDown className="w-3 h-3"/> Read More</>}
                             </button>
                           )}
+                        </div>
+                      )}
+
+                      {session.images && session.images.length > 0 && (
+                        <div className="mt-3 flex gap-2 flex-wrap">
+                          {session.images.map((img, i) => (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <a key={i} href={img} target="_blank" rel="noopener noreferrer">
+                              <img src={img} alt="Session" className="h-12 w-12 rounded object-cover border border-slate-200" />
+                            </a>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -300,11 +344,23 @@ export default function ParticipantDetailPage() {
           </div>
         </div>
       </div>
+      )}
 
-      <ParticipantModal 
+      {activeTab === "activities" && (
+        <ActivitiesClient canManage={canManageActivities} participantId={params.id as string} embedded />
+      )}
+
+      <ParticipantModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         participant={participant}
+        onSuccess={fetchParticipant}
+      />
+
+      <SessionModal
+        isOpen={isSessionModalOpen}
+        onClose={() => setIsSessionModalOpen(false)}
+        participantId={params.id as string}
         onSuccess={fetchParticipant}
       />
     </div>
