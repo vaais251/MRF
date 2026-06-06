@@ -13,7 +13,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const body = await req.json()
-    const { sponsorName, type, amount, startDate, endDate, status, participantId, notes } = body
+    const { sponsorName, type, amount, startDate, endDate, status, participantId, notes, other } = body
 
     const sponsorship = await prisma.rFLSponsorship.update({
       where: { id: params.id },
@@ -25,7 +25,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         endDate: endDate ? new Date(endDate) : null,
         status,
         participantId: participantId || null,
-        notes
+        notes,
+        other: other === undefined ? undefined : (other || null),
       }
     })
 

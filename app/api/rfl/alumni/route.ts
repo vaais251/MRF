@@ -48,10 +48,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, program, institute, graduationYear, currentStatus } = body
+    const { name, program, institute, graduationYear, currentStatus, image, tenure, qualification, professionalJourney } = body
 
     if (!name || !program || !institute || !graduationYear || !currentStatus) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    if (typeof image === "string" && image && !image.startsWith("data:image/")) {
+      return NextResponse.json({ error: "Invalid image format" }, { status: 400 })
+    }
+    if (typeof image === "string" && image.length > 500_000) {
+      return NextResponse.json({ error: "Image is too large" }, { status: 413 })
     }
 
     const alumni = await prisma.rFLAlumni.create({
@@ -60,7 +67,11 @@ export async function POST(req: NextRequest) {
         program,
         institute,
         graduationYear: parseInt(graduationYear),
-        currentStatus
+        currentStatus,
+        image: image || null,
+        tenure: tenure || null,
+        qualification: qualification || null,
+        professionalJourney: professionalJourney || null,
       }
     })
 

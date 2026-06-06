@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { 
-  FileText, FileSpreadsheet, Download, Loader2, Users, 
-  GraduationCap, BookOpen, DollarSign
+import {
+  FileText, FileSpreadsheet, Loader2, Users,
+  GraduationCap, BookOpen, DollarSign, Printer
 } from "lucide-react"
 import { toast } from "sonner"
 import * as XLSX from "xlsx"
@@ -16,6 +16,36 @@ import {
 } from "recharts"
 
 const COLORS = ['#0A1628', '#C9A84C', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+
+// Convert a camelCase / snake_case key into a human-friendly column header.
+function humanLabel(key: string): string {
+  return key
+    .replace(/[_-]/g, " ")
+    .replace(/([A-Z])/g, " $1")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
+// Render any value safely as a table cell: dates -> "DD MMM YYYY", null -> "-".
+function formatCell(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "-"
+  if (typeof value === "string") {
+    // ISO date-string detection
+    const m = /^\d{4}-\d{2}-\d{2}(T|$)/.exec(value)
+    if (m) {
+      const d = new Date(value)
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+      }
+    }
+    return value
+  }
+  if (value instanceof Date) {
+    return value.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+  }
+  return String(value)
+}
 
 export default function ReportsClient() {
   const [analytics, setAnalytics] = useState<any>(null)
@@ -80,11 +110,11 @@ export default function ReportsClient() {
         doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 36)
 
         const keys = Object.keys(data[0]).filter(k => typeof data[0][k] !== 'object')
-        const tableData = data.map((item: any) => keys.map(k => String(item[k] || '')))
+        const tableData = data.map((item: any) => keys.map(k => formatCell(item[k])))
 
         autoTable(doc, {
           startY: 42,
-          head: [keys.map(k => k.charAt(0).toUpperCase() + k.slice(1).replace(/([A-Z])/g, ' $1'))],
+          head: [keys.map(humanLabel)],
           body: tableData,
           styles: { fontSize: 8, cellPadding: 3 },
           headStyles: { fillColor: [10, 22, 40], textColor: 255 },
@@ -105,6 +135,83 @@ export default function ReportsClient() {
       }
     } catch (error) {
       toast.error("An error occurred during export")
+    } finally {
+      setLoadingCard(null)
+    }
+  }
+
+  // Print: open a clean printable window with just the report table.
+  const handlePrint = async (type: "PARTICIPANTS" | "MENTORSHIP" | "ALUMNI" | "SPONSORSHIPS") => {
+    setLoadingCard(`${type}_PRINT`)
+    try {
+      const endpointMap = {
+        PARTICIPANTS: "/api/reports/participants",
+        MENTORSHIP: "/api/reports/mentorship",
+        ALUMNI: "/api/reports/alumni",
+        SPONSORSHIPS: "/api/reports/sponsorships",
+      }
+      const titleMap = {
+        PARTICIPANTS: "Participant Progress Report",
+        MENTORSHIP: "Mentorship Activity Report",
+        ALUMNI: "Alumni Engagement Report",
+        SPONSORSHIPS: "Sponsorship Status Report",
+      }
+
+      const res = await fetch(endpointMap[type])
+      if (!res.ok) throw new Error("Failed to fetch report data")
+      const data = await res.json()
+      if (!Array.isArray(data) || data.length === 0) {
+        toast.info("No data available for this report")
+        return
+      }
+
+      const title = titleMap[type]
+      const keys = Object.keys(data[0]).filter(k => typeof data[0][k] !== "object")
+
+      const headHtml = keys.map(k => `<th>${humanLabel(k)}</th>`).join("")
+      const bodyHtml = data
+        .map(
+          (row: any) =>
+            `<tr>${keys
+              .map(k => `<td>${String(formatCell(row[k])).replace(/</g, "&lt;")}</td>`)
+              .join("")}</tr>`
+        )
+        .join("")
+
+      const html = `<!doctype html>
+<html><head><meta charset="utf-8"><title>${title}</title>
+<style>
+  *{ box-sizing: border-box; }
+  body{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 24px; color: #111; }
+  .meta{ color:#666; font-size:12px; margin-top:4px; }
+  h1{ color:#0A1628; margin:0; }
+  h2{ color:#C9A84C; margin:0 0 4px; font-size:18px; }
+  table{ width:100%; border-collapse: collapse; margin-top:18px; font-size:12px; }
+  th{ background:#0A1628; color:#fff; text-align:left; padding:8px; }
+  td{ border-bottom: 1px solid #eee; padding:6px 8px; vertical-align: top; }
+  tr:nth-child(even) td{ background:#fafafa; }
+  .footer{ position: fixed; bottom: 10px; left:0; right:0; text-align:center; color:#999; font-size:10px; }
+  @media print { .no-print{ display:none; } }
+</style></head>
+<body>
+  <h1>Miri Roshni Trust</h1>
+  <h2>${title}</h2>
+  <div class="meta">Generated on ${new Date().toLocaleString()}</div>
+  <table><thead><tr>${headHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>
+  <div class="footer">Generated by MRT M&E System · Confidential</div>
+  <script>window.onload = () => { window.focus(); window.print(); };</script>
+</body></html>`
+
+      const win = window.open("", "_blank", "noopener,noreferrer,width=1024,height=768")
+      if (!win) {
+        toast.error("Pop-up blocked. Please allow pop-ups to print.")
+        return
+      }
+      win.document.open()
+      win.document.write(html)
+      win.document.close()
+    } catch {
+      toast.error("Failed to open print view")
     } finally {
       setLoadingCard(null)
     }
@@ -164,8 +271,17 @@ export default function ReportsClient() {
               </div>
             </div>
             
-            <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-end gap-3">
-              <button 
+            <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-end gap-2 flex-wrap">
+              <button
+                onClick={() => handlePrint(report.id)}
+                disabled={loadingCard === `${report.id}_PRINT`}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 text-sm"
+                title="Print this report"
+              >
+                {loadingCard === `${report.id}_PRINT` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                Print
+              </button>
+              <button
                 onClick={() => handleExport(report.id, "EXCEL")}
                 disabled={loadingCard === `${report.id}_EXCEL`}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-[#C9A84C]/20 text-[#C9A84C] font-medium hover:bg-[#C9A84C]/5 transition-colors disabled:opacity-50 text-sm"
@@ -173,7 +289,7 @@ export default function ReportsClient() {
                 {loadingCard === `${report.id}_EXCEL` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
                 Excel
               </button>
-              <button 
+              <button
                 onClick={() => handleExport(report.id, "PDF")}
                 disabled={loadingCard === `${report.id}_PDF`}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#C9A84C] text-white font-medium hover:bg-[#B8943D] transition-colors disabled:opacity-70 shadow-sm text-sm"

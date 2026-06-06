@@ -41,7 +41,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const body = await req.json()
-    const { name, program, institute, graduationYear, currentStatus } = body
+    const { name, program, institute, graduationYear, currentStatus, image, tenure, qualification, professionalJourney } = body
+
+    if (typeof image === "string" && image && !image.startsWith("data:image/")) {
+      return NextResponse.json({ error: "Invalid image format" }, { status: 400 })
+    }
+    if (typeof image === "string" && image.length > 500_000) {
+      return NextResponse.json({ error: "Image is too large" }, { status: 413 })
+    }
 
     const alumni = await prisma.rFLAlumni.update({
       where: { id: params.id },
@@ -50,7 +57,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         program,
         institute,
         graduationYear: graduationYear ? parseInt(graduationYear) : undefined,
-        currentStatus
+        currentStatus,
+        image: image === undefined ? undefined : (image || null),
+        tenure: tenure === undefined ? undefined : (tenure || null),
+        qualification: qualification === undefined ? undefined : (qualification || null),
+        professionalJourney: professionalJourney === undefined ? undefined : (professionalJourney || null),
       }
     })
 

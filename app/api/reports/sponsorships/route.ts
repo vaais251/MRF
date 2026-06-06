@@ -11,9 +11,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const sponsorships = await prisma.rFLSponsorship.findMany({
+    const raw = await prisma.rFLSponsorship.findMany({
       orderBy: { startDate: "desc" }
     })
+
+    const flatData = raw.map(s => ({
+      sponsorName: s.sponsorName,
+      type: s.type,
+      amount: s.amount ? Number(s.amount) : null,
+      startDate: s.startDate,
+      endDate: s.endDate,
+      status: s.status,
+      notes: s.notes,
+      other: s.other,
+    }))
 
     await logAction({
       userId: session.user.id,
@@ -24,7 +35,7 @@ export async function GET(req: NextRequest) {
       req
     })
 
-    return NextResponse.json(sponsorships)
+    return NextResponse.json(flatData)
   } catch (error) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }

@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
       where.sponsorName = { contains: search, mode: "insensitive" }
     }
 
-    const [sponsorships, totalCount] = await Promise.all([
+    const [rawSponsorships, totalCount] = await Promise.all([
       prisma.rFLSponsorship.findMany({
         where,
         skip,
@@ -36,6 +36,14 @@ export async function GET(req: NextRequest) {
       }),
       prisma.rFLSponsorship.count({ where })
     ])
+
+    // Join in linked participant names (no FK relation defined, so we fetch manually)
+    const ids = rawSponsorships.map(s => s.participantId).filter((x): x is string => !!x)
+    const participants = ids.length
+      ? await prisma.rFLParticipant.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, institute: true } })
+      : []
+    const byId = new Map(participants.map(p => [p.id, p]))
+    const sponsorships = rawSponsorships.map(s => ({ ...s, participant: s.participantId ? byId.get(s.participantId) ?? null : null }))
 
     return NextResponse.json({
       sponsorships,
@@ -57,7 +65,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { sponsorName, type, amount, startDate, endDate, status, participantId, notes } = body
+    const { sponsorName, type, amount, startDate, endDate, status, participantId, notes, other } = body
 
     if (!sponsorName || !type || !startDate || !status) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -72,7 +80,8 @@ export async function POST(req: NextRequest) {
         endDate: endDate ? new Date(endDate) : null,
         status,
         participantId: participantId || null,
-        notes
+        notes,
+        other: other || null,
       }
     })
 

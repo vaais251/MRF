@@ -79,15 +79,19 @@ model RFLMentorship {
 }
 
 model RFLAlumni {
-  id            String    @id @default(cuid())
-  name          String
-  program       String
-  institute     String
-  graduationYear Int
-  currentStatus String
-  activities    RFLAlumniActivity[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  name                String
+  image               String?
+  program             String
+  institute           String
+  graduationYear      Int
+  currentStatus       String
+  tenure              String?
+  qualification       String?
+  professionalJourney String?
+  activities          RFLAlumniActivity[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
 model RFLAlumniActivity {
@@ -113,6 +117,7 @@ model RFLSponsorship {
   status          SponsorshipStatus @default(ACTIVE)
   participantId   String?
   notes           String?
+  other           String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

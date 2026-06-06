@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner"
 import { AlumniModal } from "@/components/AlumniModal"
 import { ActivityModal } from "@/components/ActivityModal"
+import { Avatar } from "@/components/Avatar"
 
 export default function AlumniDetailPage() {
   const params = useParams()
@@ -69,8 +70,6 @@ export default function AlumniDetailPage() {
 
   if (!alumni) return null
 
-  const initials = alumni.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Top Navigation */}
@@ -97,10 +96,12 @@ export default function AlumniDetailPage() {
               <Edit className="w-5 h-5" />
             </button>
 
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#C9A84C]/40 to-[#C9A84C]/10 flex items-center justify-center text-[#C9A84C] font-bold text-3xl mx-auto mb-4 border border-[#C9A84C]/20 shadow-sm">
-              {initials}
-            </div>
-            
+            <Avatar
+              name={alumni.name}
+              image={alumni.image}
+              className="w-24 h-24 bg-gradient-to-br from-[#C9A84C]/40 to-[#C9A84C]/10 text-[#C9A84C] text-3xl mx-auto mb-4 border border-[#C9A84C]/20 shadow-sm"
+            />
+
             <h1 className="text-2xl font-playfair font-bold text-slate-800 mb-2">{alumni.name}</h1>
             <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border mb-6 ${getStatusColor(alumni.currentStatus)}`}>
               {alumni.currentStatus}
@@ -119,8 +120,27 @@ export default function AlumniDetailPage() {
                 <GraduationCap className="w-5 h-5 text-slate-400" />
                 <span className="font-medium text-slate-700">Class of {alumni.graduationYear}</span>
               </div>
+              {alumni.tenure && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Calendar className="w-5 h-5 text-slate-400" />
+                  <span className="font-medium text-slate-700">Tenure: {alumni.tenure}</span>
+                </div>
+              )}
+              {alumni.qualification && (
+                <div className="flex items-center gap-3 text-sm">
+                  <GraduationCap className="w-5 h-5 text-slate-400" />
+                  <span className="font-medium text-slate-700">{alumni.qualification}</span>
+                </div>
+              )}
             </div>
           </div>
+
+          {alumni.professionalJourney && (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+              <h3 className="font-playfair text-lg font-bold text-slate-800 mb-3">Professional Journey after MRA</h3>
+              <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{alumni.professionalJourney}</p>
+            </div>
+          )}
         </div>
 
         {/* Right Column - 60% */}

@@ -21,12 +21,14 @@ export async function GET(req: NextRequest) {
     })
 
     const flatData = alumni.map(a => ({
-      id: a.id,
       name: a.name,
       program: a.program,
       institute: a.institute,
       graduationYear: a.graduationYear,
       currentStatus: a.currentStatus,
+      tenure: a.tenure,
+      qualification: a.qualification,
+      professionalJourney: a.professionalJourney,
       activityCount: a._count.activities
     }))
 

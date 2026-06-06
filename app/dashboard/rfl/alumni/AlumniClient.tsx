@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { AlumniModal } from "@/components/AlumniModal"
+import { Avatar } from "@/components/Avatar"
 
 interface AlumniClientProps {
   stats: {
@@ -171,9 +172,7 @@ export default function AlumniClient({ stats }: AlumniClientProps) {
               className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-[#C9A84C]/30 flex flex-col group"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#C9A84C]/40 to-[#C9A84C]/10 flex items-center justify-center text-[#C9A84C] font-bold text-xl border border-[#C9A84C]/20 shadow-sm">
-                  {a.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
-                </div>
+                <Avatar name={a.name} image={a.image} className="w-16 h-16 bg-gradient-to-br from-[#C9A84C]/40 to-[#C9A84C]/10 text-[#C9A84C] text-xl border border-[#C9A84C]/20 shadow-sm" />
                 <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusColor(a.currentStatus)}`}>
                   {a.currentStatus}
                 </span>

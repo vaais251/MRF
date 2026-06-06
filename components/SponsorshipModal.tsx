@@ -16,7 +16,8 @@ const sponsorshipSchema = z.object({
   endDate: z.string().optional().nullable(),
   status: z.enum(["ACTIVE", "EXPIRED", "PENDING", "CANCELLED"]),
   participantId: z.string().optional().nullable(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
+  other: z.string().optional(),
 }).refine(data => !data.endDate || new Date(data.endDate) >= new Date(data.startDate), {
   message: "End date must be after start date",
   path: ["endDate"]
@@ -55,7 +56,8 @@ export function SponsorshipModal({ isOpen, onClose, sponsorshipData, onSuccess }
       endDate: "",
       status: "ACTIVE",
       participantId: "",
-      notes: ""
+      notes: "",
+      other: "",
     }
   })
 
@@ -70,11 +72,18 @@ export function SponsorshipModal({ isOpen, onClose, sponsorshipData, onSuccess }
           endDate: sponsorshipData.endDate ? format(new Date(sponsorshipData.endDate), "yyyy-MM-dd") : "",
           status: sponsorshipData.status,
           participantId: sponsorshipData.participantId || "",
-          notes: sponsorshipData.notes || ""
+          notes: sponsorshipData.notes || "",
+          other: sponsorshipData.other || "",
         })
-        if (sponsorshipData.participantId) {
-          // We can fetch the participant details or just show ID since it's a minimal implementation
-          setSelectedParticipant({ id: sponsorshipData.participantId, name: sponsorshipData.participantId })
+        // Show the real participant name (fetch if the record doesn't include it)
+        if (sponsorshipData.participant) {
+          setSelectedParticipant(sponsorshipData.participant)
+        } else if (sponsorshipData.participantId) {
+          setSelectedParticipant({ id: sponsorshipData.participantId, name: "Loading…", institute: "" })
+          fetch(`/api/rfl/participants/${sponsorshipData.participantId}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(p => p && setSelectedParticipant({ id: p.id, name: p.name, institute: p.institute }))
+            .catch(() => {})
         }
       } else {
         reset({
@@ -85,7 +94,8 @@ export function SponsorshipModal({ isOpen, onClose, sponsorshipData, onSuccess }
           endDate: "",
           status: "ACTIVE",
           participantId: "",
-          notes: ""
+          notes: "",
+          other: "",
         })
         setSelectedParticipant(null)
       }
@@ -130,7 +140,8 @@ export function SponsorshipModal({ isOpen, onClose, sponsorshipData, onSuccess }
         ...data,
         amount: data.amount ? parseFloat(data.amount) : null,
         endDate: data.endDate ? data.endDate : null,
-        participantId: data.participantId ? data.participantId : null
+        participantId: data.participantId ? data.participantId : null,
+        other: data.other || null,
       }
 
       const res = await fetch(url, {
@@ -222,8 +233,11 @@ export function SponsorshipModal({ isOpen, onClose, sponsorshipData, onSuccess }
                 <div className="flex items-center justify-between p-3 border border-[#C9A84C] rounded-lg bg-[#C9A84C]/5">
                   <div>
                     <p className="font-semibold text-slate-800 text-sm">{selectedParticipant.name}</p>
+                    {selectedParticipant.institute && (
+                      <p className="text-xs text-slate-500">{selectedParticipant.institute}</p>
+                    )}
                   </div>
-                  <button 
+                  <button
                     type="button" 
                     onClick={() => { setSelectedParticipant(null); setValue("participantId", "") }}
                     className="text-xs font-medium text-red-500 hover:underline"
@@ -282,7 +296,12 @@ export function SponsorshipModal({ isOpen, onClose, sponsorshipData, onSuccess }
               <label className="block text-sm font-semibold text-slate-700 mb-2">Notes</label>
               <textarea {...register("notes")} className="w-full rounded-lg border border-gray-200 focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/20 outline-none p-3 resize-none h-24 text-sm" placeholder="Optional notes..."></textarea>
             </div>
-            
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Other</label>
+              <textarea {...register("other")} className="w-full rounded-lg border border-gray-200 focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/20 outline-none p-3 resize-none h-24 text-sm" placeholder="remarks/comment"></textarea>
+            </div>
+
           </form>
         </div>
 

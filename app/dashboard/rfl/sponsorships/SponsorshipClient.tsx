@@ -246,7 +246,7 @@ export default function SponsorshipClient({ stats }: SponsorshipClientProps) {
                         {s.type.replace("_", " ")}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">{s.participantId ? s.participantId : <span className="text-slate-400 italic">General</span>}</td>
+                    <td className="px-6 py-4 text-slate-600">{s.participant ? s.participant.name : <span className="text-slate-400 italic">General</span>}</td>
                     <td className="px-6 py-4 text-slate-600">
                       {format(new Date(s.startDate), "dd MMM yyyy")}
                     </td>
