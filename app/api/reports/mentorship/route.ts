@@ -22,7 +22,6 @@ export async function GET(req: NextRequest) {
 
     // Flatten data for easier export
     const flatData = mentorships.map(m => ({
-      id: m.id,
       participantName: m.participant?.name ?? "General",
       participantProgram: m.participant?.program ?? "—",
       mentorName: m.mentorName,

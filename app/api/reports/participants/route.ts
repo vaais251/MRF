@@ -15,6 +15,22 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" }
     })
 
+    // Flatten to report-friendly columns (no id, image, audit fields).
+    const flatData = participants.map(p => ({
+      name: p.name,
+      program: p.program,
+      institute: p.institute,
+      startYear: p.startYear,
+      endYear: p.endYear,
+      courseType: p.courseType,
+      currentProgress:
+        p.courseType === "Semester System" ? (p.currentSemester ? `Semester ${p.currentSemester}` : null)
+        : p.courseType === "Annual" ? (p.currentYear ? `Year ${p.currentYear}` : null)
+        : p.courseType === "Course" ? p.duration
+        : p.fieldRemarks,
+      status: p.status,
+    }))
+
     await logAction({
       userId: session.user.id,
       userEmail: session.user.email ?? "",
@@ -24,7 +40,7 @@ export async function GET(req: NextRequest) {
       req
     })
 
-    return NextResponse.json(participants)
+    return NextResponse.json(flatData)
   } catch (error) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }

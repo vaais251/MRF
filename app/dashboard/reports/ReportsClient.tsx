@@ -27,10 +27,23 @@ function humanLabel(key: string): string {
     .replace(/\b\w/g, c => c.toUpperCase())
 }
 
+// Columns that should never appear in an export, plus anything holding
+// objects or embedded images (base64 data URLs).
+function exportableKeys(row: Record<string, unknown>): string[] {
+  return Object.keys(row).filter(k => {
+    if (/^id$|Id$|^image$|^createdBy$/.test(k)) return false
+    const v = row[k]
+    if (v !== null && typeof v === "object") return false
+    if (typeof v === "string" && v.startsWith("data:")) return false
+    return true
+  })
+}
+
 // Render any value safely as a table cell: dates -> "DD MMM YYYY", null -> "-".
 function formatCell(value: unknown): string {
   if (value === null || value === undefined || value === "") return "-"
   if (typeof value === "string") {
+    if (value.startsWith("data:")) return "[image]"
     // ISO date-string detection
     const m = /^\d{4}-\d{2}-\d{2}(T|$)/.exec(value)
     if (m) {
@@ -88,7 +101,11 @@ export default function ReportsClient() {
       const filename = `${type.toLowerCase()}_report_${new Date().toISOString().split('T')[0]}`
 
       if (format === "EXCEL") {
-        const worksheet = XLSX.utils.json_to_sheet(data)
+        const excelKeys = exportableKeys(data[0])
+        const rows = data.map((item: any) =>
+          Object.fromEntries(excelKeys.map(k => [humanLabel(k), formatCell(item[k])]))
+        )
+        const worksheet = XLSX.utils.json_to_sheet(rows)
         const workbook = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(workbook, worksheet, "Report")
         XLSX.writeFile(workbook, `${filename}.xlsx`)
@@ -109,7 +126,7 @@ export default function ReportsClient() {
         doc.setTextColor(100)
         doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 36)
 
-        const keys = Object.keys(data[0]).filter(k => typeof data[0][k] !== 'object')
+        const keys = exportableKeys(data[0])
         const tableData = data.map((item: any) => keys.map(k => formatCell(item[k])))
 
         autoTable(doc, {
@@ -166,7 +183,7 @@ export default function ReportsClient() {
       }
 
       const title = titleMap[type]
-      const keys = Object.keys(data[0]).filter(k => typeof data[0][k] !== "object")
+      const keys = exportableKeys(data[0])
 
       const headHtml = keys.map(k => `<th>${humanLabel(k)}</th>`).join("")
       const bodyHtml = data
@@ -213,9 +230,18 @@ export default function ReportsClient() {
       iframe.onload = () => {
         const frameWin = iframe.contentWindow
         if (!frameWin) return
-        frameWin.onafterprint = () => iframe.remove()
-        frameWin.focus()
-        frameWin.print()
+        frameWin.onafterprint = () => setTimeout(() => iframe.remove(), 100)
+        // Defer print() out of doc.close()'s synchronous stack: the modal
+        // dialog otherwise blocks inside this try block and the iframe
+        // teardown on dialog close throws a spurious error.
+        setTimeout(() => {
+          try {
+            frameWin.focus()
+            frameWin.print()
+          } catch {
+            iframe.remove()
+          }
+        }, 50)
       }
       document.body.appendChild(iframe)
       const doc = iframe.contentDocument
