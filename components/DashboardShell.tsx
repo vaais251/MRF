@@ -160,27 +160,34 @@ export function DashboardShell({ children, session, userImage }: DashboardShellP
 
   const renderSidebar = () => (
     <>
-      <div className="h-16 flex items-center px-6 border-b border-white/10 shrink-0">
+      {/* Soft gold glow behind the header */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(201,168,76,0.18),transparent)]" />
+
+      <div className="relative h-[72px] flex items-center px-5 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-[#C9A84C]/20 flex items-center justify-center">
-            <Book className="text-[#C9A84C] w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E3C778] via-[#C9A84C] to-[#9A7B2E] flex items-center justify-center shadow-[0_4px_16px_rgba(201,168,76,0.35)] ring-1 ring-white/20">
+            <Book className="text-[#0A1628] w-5 h-5" />
           </div>
           <div>
-            <div className="font-playfair font-bold text-lg text-white leading-tight">Miri Roshni Trust</div>
-            <div className="text-[#C9A84C] text-[10px] font-semibold uppercase tracking-wider">M&E System</div>
+            <div className="font-playfair font-bold text-[17px] text-white leading-tight">Miri Roshni Trust</div>
+            <div className="text-[#C9A84C] text-[10px] font-semibold uppercase tracking-[0.2em]">M&E System</div>
           </div>
         </div>
+        <div aria-hidden className="absolute bottom-0 left-5 right-5 h-px bg-gradient-to-r from-transparent via-[#C9A84C]/40 to-transparent" />
       </div>
-      
-      <div className="flex-1 overflow-y-auto py-6 space-y-8">
+
+      <div className="sidebar-scroll relative flex-1 overflow-y-auto py-6 space-y-7">
         {NAVIGATION.map((group, idx) => {
           const visibleItems = group.items.filter(item => item.roles.includes(userRole))
           if (visibleItems.length === 0) return null
 
           return (
             <div key={idx} className="px-4">
-              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 px-3">
-                {group.group}
+              <div className="flex items-center gap-2 px-3 mb-3">
+                <span aria-hidden className="h-px w-4 bg-[#C9A84C]/50" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.22em]">
+                  {group.group}
+                </span>
               </div>
               <div className="space-y-1">
                 {visibleItems.map((item) => {
@@ -202,32 +209,46 @@ export function DashboardShell({ children, session, userImage }: DashboardShellP
                           }
                         }}
                         className={cn(
-                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 ease-in-out text-sm font-medium relative group",
-                          isActive 
-                            ? "bg-[#C9A84C]/10 text-[#C9A84C]" 
-                            : "text-white/60 hover:text-white hover:bg-white/5",
-                          item.disabled && "opacity-50 cursor-not-allowed hover:bg-transparent hover:text-white/60"
+                          "w-full flex items-center gap-3 px-2.5 py-2 rounded-xl transition-all duration-200 ease-in-out text-sm font-medium relative group border border-transparent",
+                          isActive
+                            ? "bg-gradient-to-r from-[#C9A84C]/15 to-transparent text-[#E3C778] border-[#C9A84C]/20"
+                            : "text-slate-400 hover:text-white hover:bg-white/[0.06]",
+                          item.disabled && "opacity-50 cursor-not-allowed hover:bg-transparent hover:text-slate-400"
                         )}
                       >
-                        {isActive && !item.children && (
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#C9A84C] rounded-r-md" />
+                        {isActive && (
+                          <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-7 bg-gradient-to-b from-[#E3C778] to-[#C9A84C] rounded-r-full shadow-[0_0_8px_rgba(201,168,76,0.6)]" />
                         )}
-                        <Icon className={cn("w-5 h-5 transition-colors", isActive ? "text-[#C9A84C]" : "text-white/60 group-hover:text-white")} />
+                        <span
+                          className={cn(
+                            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+                            isActive
+                              ? "bg-[#C9A84C]/15 text-[#E3C778]"
+                              : "bg-white/[0.04] text-slate-400 group-hover:bg-white/[0.08] group-hover:text-white"
+                          )}
+                        >
+                          <Icon className="w-[18px] h-[18px]" />
+                        </span>
                         <span className="flex-1 text-left">{item.label}</span>
-                        
+
                         {item.children && (
-                          <ChevronDown className={cn("w-4 h-4 transition-transform", isExpanded && "rotate-180")} />
+                          <ChevronDown
+                            className={cn(
+                              "w-4 h-4 mr-1 text-slate-500 transition-transform duration-200",
+                              isExpanded && "rotate-180 text-[#C9A84C]"
+                            )}
+                          />
                         )}
-                        
+
                         {item.disabled && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+                          <span className="text-[9px] px-2 py-0.5 mr-1 rounded-md bg-white/[0.05] border border-white/10 text-slate-400 font-medium tracking-wide">
                             Coming Soon
                           </span>
                         )}
                       </button>
                       
                       {item.children && isExpanded && (
-                        <div className="pl-11 pr-3 py-1 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                        <div className="ml-[26px] mt-1 pl-3.5 border-l border-white/[0.08] space-y-0.5 animate-in slide-in-from-top-2 duration-200">
                           {item.children.map((child: NavChild) => {
                             const isChildActive = pathname === child.href
                             return (
@@ -235,14 +256,20 @@ export function DashboardShell({ children, session, userImage }: DashboardShellP
                                 key={child.href}
                                 onClick={() => handleNavigation(child.href)}
                                 className={cn(
-                                  "w-full flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200 ease-in-out text-xs font-medium text-left",
+                                  "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 ease-in-out text-[13px] font-medium text-left",
                                   isChildActive
-                                    ? "text-[#C9A84C] bg-white/5"
-                                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                                    ? "text-[#E3C778] bg-[#C9A84C]/10"
+                                    : "text-slate-400 hover:text-white hover:bg-white/[0.05] hover:translate-x-0.5"
                                 )}
                               >
-                                {isChildActive && <div className="w-1.5 h-1.5 rounded-full bg-[#C9A84C]" />}
-                                {!isChildActive && <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />}
+                                <span
+                                  className={cn(
+                                    "w-1.5 h-1.5 rounded-full shrink-0 transition-colors",
+                                    isChildActive
+                                      ? "bg-[#C9A84C] shadow-[0_0_6px_rgba(201,168,76,0.9)]"
+                                      : "bg-slate-600"
+                                  )}
+                                />
                                 {child.label}
                               </button>
                             )
@@ -258,27 +285,28 @@ export function DashboardShell({ children, session, userImage }: DashboardShellP
         })}
       </div>
 
-      <div className="p-4 border-t border-white/10 shrink-0">
+      <div className="relative p-4 shrink-0">
+        <div aria-hidden className="absolute top-0 left-5 right-5 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
         <button
           onClick={() => handleNavigation("/dashboard/settings")}
-          className="flex items-center gap-3 px-2 py-2 mb-2 w-full rounded-md hover:bg-white/5 transition-colors text-left"
+          className="flex items-center gap-3 p-2.5 mb-2 w-full rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] hover:border-[#C9A84C]/30 transition-all duration-200 text-left"
           title="Account settings"
         >
           <Avatar
             name={session.user?.name}
             image={userImage}
-            className="w-10 h-10 bg-[#C9A84C]/20 text-[#C9A84C] shrink-0 shadow-inner"
+            className="w-10 h-10 bg-[#C9A84C]/20 text-[#C9A84C] shrink-0 ring-2 ring-[#C9A84C]/30"
           />
           <div className="overflow-hidden">
-            <div className="text-sm font-medium text-white truncate">{session.user?.name}</div>
-            <div className="text-[10px] text-slate-400 truncate uppercase tracking-wider">{session.user?.role?.replace('_', ' ')}</div>
+            <div className="text-sm font-semibold text-white truncate">{session.user?.name}</div>
+            <div className="text-[10px] text-[#C9A84C]/80 truncate uppercase tracking-[0.14em] font-medium">{session.user?.role?.replace('_', ' ')}</div>
           </div>
         </button>
-        <button 
+        <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors text-sm font-medium"
+          className="flex items-center justify-center gap-2 px-3 py-2 w-full rounded-lg border border-transparent hover:border-red-500/20 hover:bg-red-500/10 text-slate-400 hover:text-red-300 transition-all duration-200 text-[13px] font-medium"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-4 h-4" />
           <span>Sign out</span>
         </button>
       </div>
@@ -288,7 +316,7 @@ export function DashboardShell({ children, session, userImage }: DashboardShellP
   return (
     <div className="min-h-screen bg-[#F8F9FC] dark:bg-slate-950 flex font-dm-sans">
       {/* Desktop Sidebar */}
-      <aside className="w-[260px] bg-[#0A1628] fixed inset-y-0 left-0 z-50 hidden md:flex flex-col shadow-xl">
+      <aside className="w-[260px] bg-gradient-to-b from-[#0D1D38] via-[#0A1628] to-[#070F1F] border-r border-white/[0.06] fixed inset-y-0 left-0 z-50 hidden md:flex flex-col shadow-2xl overflow-hidden">
         {renderSidebar()}
       </aside>
 
@@ -299,14 +327,14 @@ export function DashboardShell({ children, session, userImage }: DashboardShellP
 
       {/* Mobile Sidebar */}
       <aside className={cn(
-        "w-[260px] bg-[#0A1628] fixed inset-y-0 left-0 z-50 flex flex-col shadow-xl transition-transform duration-300 ease-in-out md:hidden",
+        "w-[260px] bg-gradient-to-b from-[#0D1D38] via-[#0A1628] to-[#070F1F] border-r border-white/[0.06] fixed inset-y-0 left-0 z-50 flex flex-col shadow-2xl overflow-hidden transition-transform duration-300 ease-in-out md:hidden",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <button 
+        <button
           onClick={() => setIsMobileMenuOpen(false)}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white"
+          className="absolute top-5 right-4 z-10 p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
         {renderSidebar()}
       </aside>
