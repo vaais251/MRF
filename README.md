@@ -3,16 +3,17 @@
 Monitoring and Evaluation System for the Miri Roshni Trust.
 
 ## Quick Start (Development)
+
+Start Docker Desktop or Docker Engine, then run this from the project directory.
+
 ```bash
-git clone https://github.com/mrt/mrt-system.git
-cd mrt-system
-cp .env.example .env.local
-docker-compose up -d db
-npm install
-npm run dev
+docker compose up -d
+docker compose logs -f app
 ```
-Open http://localhost:3000
-Login: admin@mrt.org / admin123
+
+The app container installs dependencies from the lockfile, waits for PostgreSQL, applies the checked-in migrations, and seeds the development administrator. Local code edits are picked up by Next.js while the container runs.
+
+Once Next.js reports that it is ready, open [localhost:3000](http://localhost:3000) and sign in with `admin@mrt.org` and `admin123`. Use `docker compose down` to stop the stack and keep the database volume.
 
 ## Production Deployment
 ```bash

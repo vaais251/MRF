@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import {
-  Plus, Search, CalendarDays, MapPin, Edit, Trash2, Loader2,
+  Plus, Search, CalendarDays, MapPin, Edit, Trash2,
   ImageIcon, X, ChevronLeft, ChevronRight, StickyNote, Images
 } from "lucide-react"
 import { toast } from "sonner"

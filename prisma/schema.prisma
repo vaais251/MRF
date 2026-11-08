@@ -43,6 +43,18 @@ enum SessionType {
 model RFLParticipant {
   id                String            @id @default(cuid())
   name              String
+  fatherName        String?
+  phone1            String?
+  phone2            String?
+  whatsAppNumber    String?
+  guardianName      String?
+  guardianRelation  String?
+  guardianPhone     String?
+  permanentAddress  String?
+  currentAddress    String?
+  cnic              String?
+  district          String?
+  medicalConditions String?
   image             String?
   program           String
   institute         String

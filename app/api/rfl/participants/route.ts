@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { participantAdmissionSchema } from "@/lib/participant-admission"
+import { participantSummarySelect } from "@/lib/participant-select"
 
 const ALLOWED_ROLES = ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"]
 const WRITE_ROLES = ["SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"]
@@ -44,6 +46,7 @@ export async function GET(req: NextRequest) {
     const [participants, totalCount] = await Promise.all([
       prisma.rFLParticipant.findMany({
         where,
+        select: participantSummarySelect,
         skip,
         take: limit,
         orderBy: { createdAt: "desc" }
@@ -71,6 +74,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
+    const admission = participantAdmissionSchema.safeParse(body)
+    if (!admission.success) {
+      return NextResponse.json({ error: "Invalid admission details" }, { status: 400 })
+    }
     const { name, program, institute, startYear, endYear, courseType, currentSemester, currentYear, duration, fieldRemarks, academicResults, status, image } = body
 
     if (!name || !program || !institute || !startYear || !endYear) {
@@ -86,6 +93,7 @@ export async function POST(req: NextRequest) {
 
     const participant = await prisma.rFLParticipant.create({
       data: {
+        ...admission.data,
         name,
         program,
         institute,

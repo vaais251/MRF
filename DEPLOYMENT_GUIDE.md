@@ -56,37 +56,20 @@ You can log in using the freshly seeded administrator credentials:
 
 If you are moving the codebase to a new machine to continue development, use this method. It mounts your local files into the container so that changes update in real-time.
 
-### Step 1: Prepare the Environment
-Navigate to the project directory and set up the local environment variables:
+### Step 1. Start the development stack
+
+With Docker running, run these commands from the project directory.
+
 ```bash
-cd path/to/mrt-system
-cp .env.example .env.local
+docker compose up -d
+docker compose logs -f app
 ```
-*(Note: If `.env.example` doesn't exist, just create a `.env` file and use the contents of `.env.local` that are currently in the repository).*
 
-### Step 2: Start the Docker Containers
-Start the development environment:
-```bash
-docker-compose up -d
-```
-This will start both the PostgreSQL database and the Node.js container. The Node container will automatically run `npm install` and then `npm run dev`.
+Compose supplies the local environment variables and starts PostgreSQL. Once PostgreSQL is ready, the app container installs dependencies with `npm ci`, generates Prisma Client, applies the existing migrations, seeds the administrator, and starts Next.js with hot reload.
 
-### Step 3: Migrate and Seed the Database
-Since the development environment doesn't automatically migrate and seed the database on startup, you must run the commands manually inside the `app` container:
+### Step 2. Sign in
 
-1. **Run Migrations:** This creates the tables in your database based on your Prisma schema.
-   ```bash
-   docker-compose exec app npx prisma migrate dev
-   ```
-
-2. **Seed the Database:** This populates the database with the default initial data (e.g., the admin user).
-   ```bash
-   docker-compose exec app npx prisma db seed
-   ```
-
-### Step 4: Access the Project
-Open your web browser and navigate to:
-**http://localhost:3000**
+Once Next.js reports that it is ready, open [localhost:3000](http://localhost:3000).
 
 Log in using the seeded credentials:
 - **Email:** `admin@mrt.org`

@@ -1,12 +1,16 @@
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
+import { PARTICIPANT_PAGE_ROLES } from "@/lib/rbac"
+
+const activityViewRoles = ['SUPER_ADMIN', 'TRUST_MGMT', 'PROGRAM_MANAGER', 'MEO_OFFICER', 'SCHOOL_AUTHORITY', 'HOSTEL_INCHARGE', 'RFL_COORDINATOR']
 
 const roleRouteMap: Record<string, string[]> = {
-  '/dashboard/activities': ['SUPER_ADMIN', 'TRUST_MGMT', 'PROGRAM_MANAGER', 'MEO_OFFICER', 'SCHOOL_AUTHORITY', 'HOSTEL_INCHARGE', 'RFL_COORDINATOR'],
+  '/dashboard/activities': activityViewRoles,
   '/dashboard/users': ['SUPER_ADMIN'],
   '/dashboard/reports': ['SUPER_ADMIN', 'TRUST_MGMT', 'PROGRAM_MANAGER', 'MEO_OFFICER'],
   '/dashboard/rfl': ['SUPER_ADMIN', 'TRUST_MGMT', 'PROGRAM_MANAGER', 'MEO_OFFICER', 'RFL_COORDINATOR'],
-  '/dashboard/rfl/participants': ['SUPER_ADMIN', 'PROGRAM_MANAGER', 'MEO_OFFICER', 'RFL_COORDINATOR'],
+  '/dashboard/rfl/participants': PARTICIPANT_PAGE_ROLES,
+  '/dashboard/rfl/participants/activities': activityViewRoles,
   '/dashboard/rfl/mentorship': ['SUPER_ADMIN', 'PROGRAM_MANAGER', 'MEO_OFFICER', 'RFL_COORDINATOR'],
   '/dashboard/rfl/alumni': ['SUPER_ADMIN', 'PROGRAM_MANAGER', 'MEO_OFFICER', 'RFL_COORDINATOR'],
   '/dashboard/rfl/sponsorships': ['SUPER_ADMIN', 'PROGRAM_MANAGER', 'MEO_OFFICER', 'RFL_COORDINATOR'],

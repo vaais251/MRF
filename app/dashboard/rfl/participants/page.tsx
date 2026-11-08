@@ -10,6 +10,7 @@ import { ParticipantModal } from "@/components/ParticipantModal"
 import { Avatar } from "@/components/Avatar"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { ParticipantsTabs } from "./ParticipantsTabs"
 
 export default function ParticipantsPage() {
   const { data: session } = useSession()
@@ -29,6 +30,7 @@ export default function ParticipantsPage() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedParticipant, setSelectedParticipant] = useState<any>(null)
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false)
 
   const fetchParticipants = useCallback(async () => {
     setIsLoading(true)
@@ -62,6 +64,20 @@ export default function ParticipantsPage() {
     return () => clearTimeout(delayDebounceFn)
   }, [fetchParticipants])
 
+  const handleEdit = async (id: string) => {
+    setIsLoadingEdit(true)
+    try {
+      const res = await fetch(`/api/rfl/participants/${id}`)
+      if (!res.ok) throw new Error("Failed to load participant")
+      setSelectedParticipant(await res.json())
+      setIsModalOpen(true)
+    } catch {
+      toast.error("Failed to load participant details")
+    } finally {
+      setIsLoadingEdit(false)
+    }
+  }
+
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to drop this participant?")) return
     
@@ -90,6 +106,7 @@ export default function ParticipantsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <ParticipantsTabs active="participants" />
       
       {/* Top Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -107,6 +124,7 @@ export default function ParticipantsPage() {
         {["SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"].includes(session?.user?.role || "") && (
           <button 
             onClick={() => { setSelectedParticipant(null); setIsModalOpen(true) }}
+            disabled={isLoadingEdit}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#C9A84C] text-white font-medium hover:bg-[#B8943D] transition-colors shadow-sm active:scale-[0.98]"
           >
             <Plus className="w-5 h-5" />
@@ -244,7 +262,8 @@ export default function ParticipantsPage() {
                         </button>
                         {["SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"].includes(session?.user?.role || "") && (
                           <button 
-                            onClick={() => { setSelectedParticipant(p); setIsModalOpen(true) }}
+                            onClick={() => handleEdit(p.id)}
+                            disabled={isLoadingEdit}
                             className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-md transition-colors" title="Edit"
                           >
                             <Edit className="w-4 h-4" />

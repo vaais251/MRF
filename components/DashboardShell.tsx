@@ -8,6 +8,7 @@ import {
   UserCog, BarChart3, LogOut, Menu, X, ChevronDown
 } from "lucide-react"
 import type { Session } from "next-auth"
+import { PARTICIPANT_PAGE_ROLES } from "@/lib/rbac"
 import { cn } from "@/lib/utils"
 import { NotificationDropdown } from "./NotificationDropdown"
 import { Avatar } from "./Avatar"
@@ -38,6 +39,8 @@ interface DashboardShellProps {
   userImage: string | null
 }
 
+const participantsHref = "/dashboard/rfl/participants"
+
 const NAVIGATION: NavGroup[] = [
   {
     group: "OVERVIEW",
@@ -55,11 +58,10 @@ const NAVIGATION: NavGroup[] = [
         roles: ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"],
         children: [
           { label: "Overview", href: "/dashboard/rfl" },
-          { label: "Participants", href: "/dashboard/rfl/participants" },
+          { label: "Participants", href: participantsHref },
           { label: "Mentorship", href: "/dashboard/rfl/mentorship" },
           { label: "Alumni", href: "/dashboard/rfl/alumni" },
           { label: "Sponsorships", href: "/dashboard/rfl/sponsorships" },
-          { label: "Activities", href: "/dashboard/activities" },
         ]
       },
       { label: "MRHSS", href: "/dashboard/mrhss", icon: School, roles: ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "SCHOOL_AUTHORITY"], disabled: true },
@@ -110,6 +112,7 @@ export function DashboardShell({ children, session, userImage }: DashboardShellP
   const [expandedItems, setExpandedItems] = useState<string[]>([])
 
   const userRole = session?.user?.role || "GUEST"
+  const activeChildPath = pathname.startsWith(`${participantsHref}/`) ? participantsHref : pathname
 
   useEffect(() => {
     setExpandedItems(prev => {
@@ -138,7 +141,7 @@ export function DashboardShell({ children, session, userImage }: DashboardShellP
       }
       if (item.children) {
         item.children.forEach((child: NavChild) => {
-          if (child.href === pathname) {
+          if (child.href === activeChildPath) {
             currentPageTitle = child.label === "Overview" ? item.label : child.label
           }
         })
@@ -250,11 +253,14 @@ export function DashboardShell({ children, session, userImage }: DashboardShellP
                       {item.children && isExpanded && (
                         <div className="ml-[26px] mt-1 pl-3.5 border-l border-white/[0.08] space-y-0.5 animate-in slide-in-from-top-2 duration-200">
                           {item.children.map((child: NavChild) => {
-                            const isChildActive = pathname === child.href
+                            const isChildActive = activeChildPath === child.href
+                            const href = child.href === participantsHref && !PARTICIPANT_PAGE_ROLES.includes(userRole)
+                              ? `${participantsHref}/activities`
+                              : child.href
                             return (
                               <button
                                 key={child.href}
-                                onClick={() => handleNavigation(child.href)}
+                                onClick={() => handleNavigation(href)}
                                 className={cn(
                                   "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 ease-in-out text-[13px] font-medium text-left",
                                   isChildActive

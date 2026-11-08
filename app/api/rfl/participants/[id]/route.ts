@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { participantAdmissionSchema } from "@/lib/participant-admission"
+import { participantAdmissionSelect, participantSummarySelect } from "@/lib/participant-select"
+import { PARTICIPANT_PAGE_ROLES } from "@/lib/rbac"
 
 const ALLOWED_ROLES = ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"]
 const WRITE_ROLES = ["SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"]
@@ -15,7 +18,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     const participant = await prisma.rFLParticipant.findUnique({
       where: { id: params.id },
-      include: {
+      select: {
+        ...participantSummarySelect,
+        ...(PARTICIPANT_PAGE_ROLES.includes(session.user.role) ? participantAdmissionSelect : {}),
         mentorships: {
           orderBy: { sessionDate: 'desc' }
         }
@@ -41,6 +46,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const body = await req.json()
+    const admission = participantAdmissionSchema.safeParse(body)
+    if (!admission.success) {
+      return NextResponse.json({ error: "Invalid admission details" }, { status: 400 })
+    }
     const { name, program, institute, startYear, endYear, courseType, currentSemester, currentYear, duration, fieldRemarks, academicResults, status, image } = body
 
     if (typeof image === "string" && image && !image.startsWith("data:image/")) {
@@ -53,6 +62,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const participant = await prisma.rFLParticipant.update({
       where: { id: params.id },
       data: {
+        ...admission.data,
         name,
         program,
         institute,

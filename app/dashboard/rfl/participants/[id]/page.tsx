@@ -11,8 +11,9 @@ import {
 import { toast } from "sonner"
 import { ParticipantModal } from "@/components/ParticipantModal"
 import { SessionModal } from "@/components/SessionModal"
-import ActivitiesClient from "@/app/dashboard/activities/ActivitiesClient"
+import ActivitiesClient from "../activities/ActivitiesClient"
 import { Avatar } from "@/components/Avatar"
+import { participantAdmissionFields } from "@/lib/participant-admission"
 
 export default function ParticipantDetailPage() {
   const params = useParams()
@@ -219,6 +220,18 @@ export default function ParticipantDetailPage() {
                 </div>
               </div>
             </div>
+
+            <section className="px-8 pb-6 bg-slate-50/30">
+              <h3 className="font-playfair text-lg font-bold text-slate-800 mb-4 pt-6 border-t border-slate-200">Admission Details</h3>
+              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {participantAdmissionFields.map(({ name, label }) => (
+                  <div key={name} className={name === "medicalConditions" ? "min-w-0 sm:col-span-2" : "min-w-0"}>
+                    <dt className="text-xs font-semibold text-slate-500">{label}</dt>
+                    <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{participant[name] || "—"}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
 
             {/* Academic Results Table */}
             <div className="p-8 pt-0 bg-slate-50/30">

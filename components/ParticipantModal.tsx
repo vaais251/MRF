@@ -8,10 +8,12 @@ import { X, Plus, Trash2, Loader2, Camera, ImagePlus } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar } from "@/components/Avatar"
 import { fileToResizedDataUrl, PROFILE_IMAGE, ACTIVITY_IMAGE } from "@/lib/image"
+import { participantAdmissionFields, participantAdmissionSchema } from "@/lib/participant-admission"
 
 const COURSE_TYPES = ["Annual", "Semester System", "Course", "Other"] as const
 
 const participantSchema = z.object({
+  ...participantAdmissionSchema.shape,
   name: z.string().min(3, "Name must be at least 3 characters"),
   program: z.string().min(1, "Program is required"),
   institute: z.string().min(1, "Institute is required"),
@@ -108,8 +110,12 @@ export function ParticipantModal({ isOpen, onClose, participant, onSuccess }: Pa
     if (!isOpen) return
     setImage(participant?.image || null)
     setResults(normalizeResults(participant?.academicResults))
+    const admissionValues = Object.fromEntries(
+      participantAdmissionFields.map(({ name }) => [name, participant?.[name] ?? ""]),
+    )
     if (participant) {
       reset({
+        ...admissionValues,
         name: participant.name,
         program: participant.program,
         institute: participant.institute,
@@ -124,6 +130,7 @@ export function ParticipantModal({ isOpen, onClose, participant, onSuccess }: Pa
       })
     } else {
       reset({
+        ...admissionValues,
         name: "", program: "", institute: "",
         startYear: new Date().getFullYear(),
         endYear: new Date().getFullYear() + 4,
@@ -175,14 +182,8 @@ export function ParticipantModal({ isOpen, onClose, participant, onSuccess }: Pa
     setIsLoading(true)
     try {
       // Keep only the conditional field relevant to the chosen course type
-      const payload: any = {
-        name: data.name,
-        program: data.program,
-        institute: data.institute,
-        startYear: data.startYear,
-        endYear: data.endYear,
-        courseType: data.courseType,
-        status: data.status,
+      const payload = {
+        ...data,
         currentYear: data.courseType === "Annual" ? data.currentYear : null,
         currentSemester: data.courseType === "Semester System" ? data.currentSemester : null,
         duration: data.courseType === "Course" ? data.duration : null,
@@ -335,6 +336,29 @@ export function ParticipantModal({ isOpen, onClose, participant, onSuccess }: Pa
                 )}
               </div>
             </div>
+
+            <fieldset className="border-t border-slate-100 pt-4">
+              <legend className="pr-3 font-semibold text-slate-800">Admission Details</legend>
+              <p className="mb-4 text-sm text-slate-500">Fill in the details available for this student.</p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {participantAdmissionFields.map(({ name, label, input }) => (
+                  <label key={name} className={name === "medicalConditions" ? "md:col-span-2" : undefined}>
+                    <span className={labelClass}>{label}</span>
+                    {input === "textarea" ? (
+                      <textarea
+                        {...register(name)}
+                        rows={3}
+                        className={`${inputClass(!!errors[name])} h-auto py-2`}
+                        aria-invalid={!!errors[name]}
+                      />
+                    ) : (
+                      <input {...register(name)} type={input} className={inputClass(!!errors[name])} aria-invalid={!!errors[name]} />
+                    )}
+                    {errors[name] && <span role="alert" className="mt-1 block text-xs text-red-500">{errors[name]?.message}</span>}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
             {isEdit && (
               <div className="w-full">
