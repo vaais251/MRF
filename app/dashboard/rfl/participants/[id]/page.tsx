@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { format } from "date-fns"
 import {
@@ -11,13 +12,16 @@ import {
 import { toast } from "sonner"
 import { ParticipantModal } from "@/components/ParticipantModal"
 import { SessionModal } from "@/components/SessionModal"
-import ActivitiesClient from "../activities/ActivitiesClient"
+import ActivitiesClient from "./ActivitiesClient"
 import { Avatar } from "@/components/Avatar"
 import { participantAdmissionFields } from "@/lib/participant-admission"
 
 export default function ParticipantDetailPage() {
-  const params = useParams()
+  const { id: participantId } = useParams<{ id: string }>()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const activeTab = searchParams.get("tab") === "activities" ? "activities" : "profile"
+  const profileHref = `/dashboard/rfl/participants/${participantId}`
   const { data: session } = useSession()
   const role = session?.user?.role || ""
   const canManageActivities = ["SUPER_ADMIN", "RFL_COORDINATOR"].includes(role)
@@ -27,13 +31,12 @@ export default function ParticipantDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<"profile" | "activities">("profile")
   const [expandedNotes, setExpandedNotes] = useState<string[]>([])
 
   const fetchParticipant = useCallback(async () => {
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/rfl/participants/${params.id}`)
+      const res = await fetch(`/api/rfl/participants/${participantId}`)
       if (res.ok) {
         const data = await res.json()
         setParticipant(data)
@@ -46,7 +49,7 @@ export default function ParticipantDetailPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [params.id, router])
+  }, [participantId, router])
 
   useEffect(() => {
     fetchParticipant()
@@ -76,7 +79,7 @@ export default function ParticipantDetailPage() {
     )
   }
 
-  if (!participant) return null
+  if (!participant || participant.id !== participantId) return null
 
   const yearLabel = (y: number) => ["1st", "2nd", "3rd", "4th"][y - 1] || `${y}th`
   const courseDetail = (() => {
@@ -118,12 +121,14 @@ export default function ParticipantDetailPage() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h2 className="text-2xl font-playfair font-bold text-slate-800">Participant Details</h2>
+          <h2 className="text-2xl font-playfair font-bold text-slate-800">
+            {activeTab === "activities" ? participant.name : "Participant Details"}
+          </h2>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-slate-200">
+      <nav aria-label="Participant sections" className="flex gap-1 border-b border-slate-200">
         {[
           { id: "profile", label: "Profile", icon: UserCircle },
           { id: "activities", label: "Activities", icon: CalendarDays },
@@ -131,16 +136,18 @@ export default function ParticipantDetailPage() {
           const Icon = t.icon
           const active = activeTab === t.id
           return (
-            <button
+            <Link
               key={t.id}
-              onClick={() => setActiveTab(t.id as "profile" | "activities")}
+              href={t.id === "activities" ? `${profileHref}?tab=activities` : profileHref}
+              aria-current={active ? "page" : undefined}
+              scroll={false}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${active ? "border-[#C9A84C] text-[#C9A84C]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
             >
               <Icon className="w-4 h-4" /> {t.label}
-            </button>
+            </Link>
           )
         })}
-      </div>
+      </nav>
 
       {activeTab === "profile" && (
       <div className="flex flex-col lg:flex-row gap-6">
@@ -360,7 +367,7 @@ export default function ParticipantDetailPage() {
       )}
 
       {activeTab === "activities" && (
-        <ActivitiesClient canManage={canManageActivities} participantId={params.id as string} embedded />
+        <ActivitiesClient key={participantId} canManage={canManageActivities} participantId={participantId} />
       )}
 
       <ParticipantModal
@@ -373,7 +380,7 @@ export default function ParticipantDetailPage() {
       <SessionModal
         isOpen={isSessionModalOpen}
         onClose={() => setIsSessionModalOpen(false)}
-        participantId={params.id as string}
+        participantId={participantId}
         onSuccess={fetchParticipant}
       />
     </div>

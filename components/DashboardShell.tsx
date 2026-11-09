@@ -253,14 +253,12 @@ export function DashboardShell({ children, session, userImage }: DashboardShellP
                       {item.children && isExpanded && (
                         <div className="ml-[26px] mt-1 pl-3.5 border-l border-white/[0.08] space-y-0.5 animate-in slide-in-from-top-2 duration-200">
                           {item.children.map((child: NavChild) => {
+                            if (child.href === participantsHref && !PARTICIPANT_PAGE_ROLES.includes(userRole)) return null
                             const isChildActive = activeChildPath === child.href
-                            const href = child.href === participantsHref && !PARTICIPANT_PAGE_ROLES.includes(userRole)
-                              ? `${participantsHref}/activities`
-                              : child.href
                             return (
                               <button
                                 key={child.href}
-                                onClick={() => handleNavigation(href)}
+                                onClick={() => handleNavigation(child.href)}
                                 className={cn(
                                   "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 ease-in-out text-[13px] font-medium text-left",
                                   isChildActive

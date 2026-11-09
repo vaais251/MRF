@@ -23,7 +23,7 @@ interface ActivityFormModalProps {
   onClose: () => void
   activity?: ActivityRecord | null
   onSuccess: () => void
-  participantId?: string // when set, the new activity links to this participant
+  participantId: string
 }
 
 export function ActivityFormModal({ isOpen, onClose, activity, onSuccess, participantId }: ActivityFormModalProps) {
@@ -99,7 +99,7 @@ export function ActivityFormModal({ isOpen, onClose, activity, onSuccess, partic
         location: location.trim() || null,
         notes: notes.trim() || null,
         images,
-        ...(participantId ? { participantId } : {}),
+        participantId,
       }
       const res = await fetch(isEdit ? `/api/activities/${activity!.id}` : "/api/activities", {
         method: isEdit ? "PUT" : "POST",

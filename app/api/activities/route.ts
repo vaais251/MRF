@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import type { Prisma } from "@prisma/client"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logAction } from "@/lib/audit"
 
-// Every authenticated role can view the activity feed
+// Every authenticated role can view participant activities
 const VIEW_ROLES = [
   "SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER",
   "SCHOOL_AUTHORITY", "HOSTEL_INCHARGE", "RFL_COORDINATOR",
@@ -37,13 +38,13 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"))
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "12")))
     const search = searchParams.get("search") || ""
-    const participantId = searchParams.get("participantId")
+    const participantId = searchParams.get("participantId")?.trim()
+    if (!participantId) {
+      return NextResponse.json({ error: "Participant is required" }, { status: 400 })
+    }
     const skip = (page - 1) * limit
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {}
-    // Scope to a participant's activities, or the global feed (no participant) otherwise.
-    where.participantId = participantId ? participantId : null
+    const where: Prisma.ActivityWhereInput = { participantId }
     if (search) {
       where.OR = [
         { title: { contains: search, mode: "insensitive" } },
@@ -91,10 +92,21 @@ export async function POST(req: NextRequest) {
     if (!title || !description || !date) {
       return NextResponse.json({ error: "Title, description and date are required" }, { status: 400 })
     }
+    if (typeof participantId !== "string" || !participantId.trim()) {
+      return NextResponse.json({ error: "Participant is required" }, { status: 400 })
+    }
 
     const imageError = validateImages(images)
     if (imageError) {
       return NextResponse.json({ error: imageError }, { status: 400 })
+    }
+
+    const participant = await prisma.rFLParticipant.findUnique({
+      where: { id: participantId.trim() },
+      select: { id: true },
+    })
+    if (!participant) {
+      return NextResponse.json({ error: "Participant not found" }, { status: 404 })
     }
 
     const activity = await prisma.activity.create({
@@ -105,7 +117,7 @@ export async function POST(req: NextRequest) {
         location: location || null,
         notes: notes || null,
         images: Array.isArray(images) ? images : [],
-        participantId: participantId || null,
+        participantId: participant.id,
         createdBy: session.user.id,
         createdByName: session.user.name || null,
       },

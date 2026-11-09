@@ -4,13 +4,13 @@ import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { 
   Plus, Search, Filter, Eye, Edit, Trash2, 
-  ChevronLeft, ChevronRight, ArrowUpDown
+  ChevronLeft, ChevronRight, ArrowUpDown, CalendarDays
 } from "lucide-react"
 import { ParticipantModal } from "@/components/ParticipantModal"
 import { Avatar } from "@/components/Avatar"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { ParticipantsTabs } from "./ParticipantsTabs"
+import Link from "next/link"
 
 export default function ParticipantsPage() {
   const { data: session } = useSession()
@@ -106,7 +106,6 @@ export default function ParticipantsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <ParticipantsTabs active="participants" />
       
       {/* Top Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -253,10 +252,19 @@ export default function ParticipantsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/dashboard/rfl/participants/${p.id}?tab=activities`}
+                          prefetch={false}
+                          aria-label={`View activities for ${p.name}`}
+                          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        >
+                          <CalendarDays className="w-4 h-4" />
+                          Activities
+                        </Link>
                         <button 
                           onClick={() => router.push(`/dashboard/rfl/participants/${p.id}`)}
-                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-md transition-colors" title="View Details"
+                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-md opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity" title="View Details"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -264,7 +272,7 @@ export default function ParticipantsPage() {
                           <button 
                             onClick={() => handleEdit(p.id)}
                             disabled={isLoadingEdit}
-                            className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-md transition-colors" title="Edit"
+                            className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-md opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity" title="Edit"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -272,7 +280,7 @@ export default function ParticipantsPage() {
                         {["SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"].includes(session?.user?.role || "") && (
                           <button 
                             onClick={() => handleDelete(p.id)}
-                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors" title="Delete"
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-md opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity" title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
