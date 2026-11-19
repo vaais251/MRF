@@ -8,6 +8,8 @@ WORKDIR /app
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
 RUN npm ci
+COPY prisma ./prisma
+RUN npx prisma generate
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -19,8 +21,7 @@ COPY . .
 # Next.js telemetry
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Generate Prisma client and build Next.js app
-RUN npx prisma generate
+# Build Next.js app
 RUN npm run build
 
 # Production image, copy all the files and run next
