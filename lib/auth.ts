@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "./prisma"
 import bcrypt from "bcryptjs"
+import { logAction } from "@/lib/audit"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -41,6 +42,17 @@ export const authOptions: NextAuthOptions = {
       }
     })
   ],
+  events: {
+    async signIn({ user }) {
+      await logAction({
+        userId: user.id,
+        userEmail: user.email || "",
+        action: "LOGIN",
+        module: "USERS",
+        description: "Successful sign-in",
+      })
+    },
+  },
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {

@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { participantAdmissionSchema } from "@/lib/participant-admission"
 import { participantAdmissionSelect, participantSummarySelect } from "@/lib/participant-select"
-import { PARTICIPANT_PAGE_ROLES } from "@/lib/rbac"
 
 const ALLOWED_ROLES = ["SUPER_ADMIN", "TRUST_MGMT", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"]
 const WRITE_ROLES = ["SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"]
@@ -20,7 +19,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       where: { id: params.id },
       select: {
         ...participantSummarySelect,
-        ...(PARTICIPANT_PAGE_ROLES.includes(session.user.role) ? participantAdmissionSelect : {}),
+        ...(WRITE_ROLES.includes(session.user.role) ? participantAdmissionSelect : {}),
         mentorships: {
           orderBy: { sessionDate: 'desc' }
         }

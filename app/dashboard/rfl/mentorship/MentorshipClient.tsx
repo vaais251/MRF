@@ -4,11 +4,14 @@ import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { 
   Plus, Search, Filter, Calendar, Users, 
-  Trash2, Edit, PieChart, Info
+  Trash2, Edit, PieChart, Eye
 } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import { SessionModal } from "@/components/SessionModal"
+import Link from "next/link"
+import { RFL_WRITE_ROLES } from "@/lib/rbac"
+import { IndividualReportButton } from "@/components/IndividualReportButton"
 
 interface MentorshipClientProps {
   stats: {
@@ -93,7 +96,7 @@ export default function MentorshipClient({ stats }: MentorshipClientProps) {
     setPage(1)
   }
 
-  const canEdit = ["SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"].includes(session?.user?.role || "")
+  const canEdit = RFL_WRITE_ROLES.includes(session?.user?.role || "")
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -216,7 +219,7 @@ export default function MentorshipClient({ stats }: MentorshipClientProps) {
                 <th className="px-6 py-4">Type</th>
                 <th className="px-6 py-4">Target Audience</th>
                 <th className="px-6 py-4">Notes</th>
-                {canEdit && <th className="px-6 py-4 text-right">Actions</th>}
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -229,12 +232,12 @@ export default function MentorshipClient({ stats }: MentorshipClientProps) {
                     <td className="px-6 py-4"><div className="w-20 h-6 bg-slate-200 rounded-full" /></td>
                     <td className="px-6 py-4"><div className="w-24 h-4 bg-slate-200 rounded" /></td>
                     <td className="px-6 py-4"><div className="w-40 h-4 bg-slate-200 rounded" /></td>
-                    {canEdit && <td className="px-6 py-4 text-right"><div className="w-16 h-6 bg-slate-200 rounded ml-auto" /></td>}
+                    <td className="px-6 py-4 text-right"><div className="w-16 h-6 bg-slate-200 rounded ml-auto" /></td>
                   </tr>
                 ))
               ) : sessions.length === 0 ? (
                 <tr>
-                  <td colSpan={canEdit ? 7 : 6} className="px-6 py-16 text-center">
+                  <td colSpan={7} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center justify-center text-slate-400">
                       <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
                         <Calendar className="w-8 h-8 text-slate-300" />
@@ -277,9 +280,18 @@ export default function MentorshipClient({ stats }: MentorshipClientProps) {
                         </div>
                       )}
                     </td>
-                    {canEdit && (
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <IndividualReportButton kind="mentorship" id={s.id} name={s.mentorName} />
+                        <Link
+                          href={`/dashboard/rfl/mentorship/${s.id}`}
+                          aria-label={`View session with ${s.mentorName}`}
+                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                        {canEdit && <>
                           <button 
                             onClick={() => { setSelectedSession(s); setIsModalOpen(true) }}
                             className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-md transition-colors" title="Edit"
@@ -292,9 +304,9 @@ export default function MentorshipClient({ stats }: MentorshipClientProps) {
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        </div>
-                      </td>
-                    )}
+                        </>}
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -326,7 +338,7 @@ export default function MentorshipClient({ stats }: MentorshipClientProps) {
         </div>
       </div>
 
-      {isModalOpen && (
+      {canEdit && isModalOpen && (
         <SessionModal 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 

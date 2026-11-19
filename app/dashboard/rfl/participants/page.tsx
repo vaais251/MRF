@@ -11,6 +11,7 @@ import { Avatar } from "@/components/Avatar"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { IndividualReportButton } from "@/components/IndividualReportButton"
 
 export default function ParticipantsPage() {
   const { data: session } = useSession()
@@ -253,7 +254,8 @@ export default function ParticipantsPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link
+                        <IndividualReportButton kind="participants" id={p.id} name={p.name} />
+                        {session?.user?.role !== "TRUST_MGMT" && <Link
                           href={`/dashboard/rfl/participants/${p.id}?tab=activities`}
                           prefetch={false}
                           aria-label={`View activities for ${p.name}`}
@@ -261,10 +263,10 @@ export default function ParticipantsPage() {
                         >
                           <CalendarDays className="w-4 h-4" />
                           Activities
-                        </Link>
+                        </Link>}
                         <button 
                           onClick={() => router.push(`/dashboard/rfl/participants/${p.id}`)}
-                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-md opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity" title="View Details"
+                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-md transition-colors" title="View Details" aria-label={`View details for ${p.name}`}
                         >
                           <Eye className="w-4 h-4" />
                         </button>

@@ -4,12 +4,13 @@ import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { 
   Plus, Search, GraduationCap, Users, Calendar, 
-  MapPin, Loader2, Edit, Trash2, Link as LinkIcon
+  MapPin, Edit
 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { AlumniModal } from "@/components/AlumniModal"
 import { Avatar } from "@/components/Avatar"
+import type { RFLAlumni } from "@prisma/client"
 
 interface AlumniClientProps {
   stats: {
@@ -23,7 +24,7 @@ export default function AlumniClient({ stats }: AlumniClientProps) {
   const { data: session } = useSession()
   const router = useRouter()
   
-  const [alumni, setAlumni] = useState<any[]>([])
+  const [alumni, setAlumni] = useState<(RFLAlumni & { _count: { activities: number } })[]>([])
   const [isLoading, setIsLoading] = useState(true)
   
   // Filters
@@ -31,6 +32,8 @@ export default function AlumniClient({ stats }: AlumniClientProps) {
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedAlumni, setSelectedAlumni] = useState<RFLAlumni | null>(null)
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false)
 
   const fetchAlumni = useCallback(async () => {
     setIsLoading(true)
@@ -43,7 +46,7 @@ export default function AlumniClient({ stats }: AlumniClientProps) {
         const data = await res.json()
         setAlumni(data)
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to load alumni")
     } finally {
       setIsLoading(false)
@@ -58,6 +61,20 @@ export default function AlumniClient({ stats }: AlumniClientProps) {
   }, [fetchAlumni])
 
   const canEdit = ["SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"].includes(session?.user?.role || "")
+
+  const handleEdit = async (id: string) => {
+    setIsLoadingEdit(true)
+    try {
+      const res = await fetch(`/api/rfl/alumni/${id}`)
+      if (!res.ok) throw new Error("Failed to load alumni")
+      setSelectedAlumni(await res.json())
+      setIsModalOpen(true)
+    } catch {
+      toast.error("Failed to load alumni details")
+    } finally {
+      setIsLoadingEdit(false)
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch(status.toLowerCase()) {
@@ -86,7 +103,8 @@ export default function AlumniClient({ stats }: AlumniClientProps) {
         
         {canEdit && (
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => { setSelectedAlumni(null); setIsModalOpen(true) }}
+            disabled={isLoadingEdit}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#C9A84C] text-white font-medium hover:bg-[#B8943D] transition-colors shadow-sm active:scale-[0.98]"
           >
             <Plus className="w-5 h-5" />
@@ -194,23 +212,35 @@ export default function AlumniClient({ stats }: AlumniClientProps) {
                 </div>
               </div>
 
-              <div className="mt-auto">
+              <div className="mt-auto flex items-center gap-2">
                 <button 
                   onClick={() => router.push(`/dashboard/rfl/alumni/${a.id}`)}
                   className="w-full py-2.5 rounded-lg border-2 border-[#C9A84C]/30 text-[#C9A84C] font-semibold text-sm transition-all duration-200 hover:bg-[#C9A84C] hover:text-white"
                 >
                   View Profile
                 </button>
+                {canEdit && (
+                  <button
+                    onClick={() => handleEdit(a.id)}
+                    disabled={isLoadingEdit}
+                    title="Edit"
+                    aria-label={`Edit ${a.name}`}
+                    className="p-2.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {isModalOpen && (
+      {canEdit && isModalOpen && (
         <AlumniModal 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 
+          alumniData={selectedAlumni}
           onSuccess={fetchAlumni}
         />
       )}

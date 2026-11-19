@@ -1,9 +1,13 @@
-import { Users, HandHeart, Award, DollarSign, Plus, UserPlus, GraduationCap, Coins } from "lucide-react"
+import { Users, HandHeart, Award, DollarSign, Plus, UserPlus, GraduationCap, Coins, Eye } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 
 export default async function RFLPage() {
+  const session = await getServerSession(authOptions)
+  const isReadOnly = session?.user?.role === "TRUST_MGMT"
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
@@ -81,7 +85,10 @@ export default async function RFLPage() {
     { label: "Active Sponsorships", value: activeSponsorships, icon: DollarSign, colorClass: "text-purple-500", bgClass: "bg-purple-500/10" },
   ]
 
-  const actions = [
+  const actions = isReadOnly ? [
+    { label: "View Participants", href: "/dashboard/rfl/participants" },
+    { label: "View Mentorship", href: "/dashboard/rfl/mentorship" },
+  ] : [
     { label: "Add Participant", href: "/dashboard/rfl/participants" },
     { label: "Record Mentorship Session", href: "/dashboard/rfl/mentorship" },
     { label: "Add Alumni", href: "/dashboard/rfl/alumni" },
@@ -128,7 +135,7 @@ export default async function RFLPage() {
             href={action.href}
             className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-[#C9A84C]/30 text-[#C9A84C] font-semibold text-sm transition-all duration-200 hover:bg-[#C9A84C] hover:text-white hover:border-[#C9A84C] active:scale-[0.98] shadow-sm"
           >
-            <Plus className="w-4 h-4" />
+            {isReadOnly ? <Eye className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             {action.label}
           </Link>
         ))}

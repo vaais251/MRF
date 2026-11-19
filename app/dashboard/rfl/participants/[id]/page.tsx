@@ -155,12 +155,15 @@ export default function ParticipantDetailPage() {
         <div className="w-full lg:w-[60%] space-y-6">
           
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative group">
-            <button 
-              onClick={() => setIsEditModalOpen(true)}
-              className="absolute top-6 right-6 p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 transition-colors opacity-0 group-hover:opacity-100"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
+            {canEditSessions && (
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                title="Edit"
+                className="absolute top-6 right-6 p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+            )}
             
             <div className="p-8 pb-6 border-b border-slate-100">
               <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
@@ -228,8 +231,8 @@ export default function ParticipantDetailPage() {
               </div>
             </div>
 
-            <section className="px-8 pb-6 bg-slate-50/30">
-              <h3 className="font-playfair text-lg font-bold text-slate-800 mb-4 pt-6 border-t border-slate-200">Admission Details</h3>
+            {canEditSessions && <section className="px-8 pb-6 bg-slate-50/30">
+              <h3 className="font-playfair text-lg font-bold text-slate-800 mb-4 pt-6 border-t border-slate-200">Personal details</h3>
               <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {participantAdmissionFields.map(({ name, label }) => (
                   <div key={name} className={name === "medicalConditions" ? "min-w-0 sm:col-span-2" : "min-w-0"}>
@@ -238,7 +241,7 @@ export default function ParticipantDetailPage() {
                   </div>
                 ))}
               </dl>
-            </section>
+            </section>}
 
             {/* Academic Results Table */}
             <div className="p-8 pt-0 bg-slate-50/30">
@@ -370,19 +373,19 @@ export default function ParticipantDetailPage() {
         <ActivitiesClient key={participantId} canManage={canManageActivities} participantId={participantId} />
       )}
 
-      <ParticipantModal
+      {canEditSessions && <ParticipantModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         participant={participant}
         onSuccess={fetchParticipant}
-      />
+      />}
 
-      <SessionModal
+      {canEditSessions && <SessionModal
         isOpen={isSessionModalOpen}
         onClose={() => setIsSessionModalOpen(false)}
         participantId={participantId}
         onSuccess={fetchParticipant}
-      />
+      />}
     </div>
   )
 }

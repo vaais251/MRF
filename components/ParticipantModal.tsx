@@ -338,7 +338,7 @@ export function ParticipantModal({ isOpen, onClose, participant, onSuccess }: Pa
             </div>
 
             <fieldset className="border-t border-slate-100 pt-4">
-              <legend className="pr-3 font-semibold text-slate-800">Admission Details</legend>
+              <legend className="pr-3 font-semibold text-slate-800">Personal details</legend>
               <p className="mb-4 text-sm text-slate-500">Fill in the details available for this student.</p>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {participantAdmissionFields.map(({ name, label, input }) => (

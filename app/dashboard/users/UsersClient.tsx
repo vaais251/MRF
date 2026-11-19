@@ -103,6 +103,13 @@ export default function UsersClient({ stats }: UsersClientProps) {
     }
   }, [fetchUsers, activeTab])
 
+  useEffect(() => {
+    if (activeTab !== "USERS") return
+    const refreshUsers = () => { fetchUsers() }
+    window.addEventListener("focus", refreshUsers)
+    return () => window.removeEventListener("focus", refreshUsers)
+  }, [fetchUsers, activeTab])
+
   const toggleStatus = async (user: any) => {
     if (session?.user?.id === user.id) {
       toast.error("You cannot deactivate your own account")
@@ -344,8 +351,12 @@ export default function UsersClient({ stats }: UsersClientProps) {
                         <td className="px-6 py-4 text-slate-600">
                           {format(new Date(u.createdAt), "dd MMM yyyy")}
                         </td>
-                        <td className="px-6 py-4 text-slate-600 italic">
-                          Never
+                        <td className="px-6 py-4 text-slate-600">
+                          {u.lastLogin ? (
+                            <time dateTime={u.lastLogin} title={new Date(u.lastLogin).toLocaleString()}>
+                              {format(new Date(u.lastLogin), "dd MMM yyyy, HH:mm")}
+                            </time>
+                          ) : <span className="italic text-slate-400">Not recorded</span>}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

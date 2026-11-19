@@ -51,12 +51,19 @@ export async function GET(req: NextRequest) {
       prisma.user.count({ where })
     ])
 
+    const lastLogins = users.length ? await prisma.auditLog.groupBy({
+      by: ["userId"],
+      where: { action: "LOGIN", userId: { in: users.map(user => user.id) } },
+      _max: { createdAt: true },
+    }) : []
+    const lastLoginByUser = new Map(lastLogins.map(login => [login.userId, login._max.createdAt]))
+
     return NextResponse.json({
-      users,
+      users: users.map(user => ({ ...user, lastLogin: lastLoginByUser.get(user.id) || null })),
       totalCount,
       page,
       totalPages: Math.ceil(totalCount / limit)
-    })
+    }, { headers: { "Cache-Control": "private, no-store" } })
 
   } catch (error) {
     console.error("Error fetching users:", error)
