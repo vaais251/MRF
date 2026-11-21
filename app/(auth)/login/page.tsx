@@ -195,7 +195,7 @@ export default function LoginPage() {
                 <Input 
                   id="email" 
                   type="email" 
-                  placeholder="admin@mrt.org"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -279,14 +279,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          <div className="mt-12 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700/50">
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-mono text-center">
-              Demo Credentials<br/>
-              Email: admin@mrt.org<br/>
-              Password: admin123
-            </p>
-          </div>
 
         </div>
       </div>
