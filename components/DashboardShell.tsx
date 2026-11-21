@@ -8,7 +8,7 @@ import {
   UserCog, BarChart3, LogOut, Menu, X, ChevronDown
 } from "lucide-react"
 import type { Session } from "next-auth"
-import { PARTICIPANT_PAGE_ROLES, MENTORSHIP_PAGE_ROLES } from "@/lib/rbac"
+import { PARTICIPANT_PAGE_ROLES, MENTORSHIP_PAGE_ROLES, ALUMNI_PAGE_ROLES, SPONSORSHIP_PAGE_ROLES } from "@/lib/rbac"
 import { cn } from "@/lib/utils"
 import { NotificationDropdown } from "./NotificationDropdown"
 import { Avatar } from "./Avatar"
@@ -255,6 +255,8 @@ export function DashboardShell({ children, session, userImage }: DashboardShellP
                           {item.children.map((child: NavChild) => {
                             if (child.href === participantsHref && !PARTICIPANT_PAGE_ROLES.includes(userRole)) return null
                             if (child.href === "/dashboard/rfl/mentorship" && !MENTORSHIP_PAGE_ROLES.includes(userRole)) return null
+                            if (child.href === "/dashboard/rfl/alumni" && !ALUMNI_PAGE_ROLES.includes(userRole)) return null
+                            if (child.href === "/dashboard/rfl/sponsorships" && !SPONSORSHIP_PAGE_ROLES.includes(userRole)) return null
                             const isChildActive = activeChildPath === child.href
                             return (
                               <button

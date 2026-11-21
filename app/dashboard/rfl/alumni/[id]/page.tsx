@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { format } from "date-fns"
 import { 
   ArrowLeft, Edit, GraduationCap, MapPin, 
@@ -11,10 +12,13 @@ import { toast } from "sonner"
 import { AlumniModal } from "@/components/AlumniModal"
 import { ActivityModal } from "@/components/ActivityModal"
 import { Avatar } from "@/components/Avatar"
+import { RFL_WRITE_ROLES } from "@/lib/rbac"
 
 export default function AlumniDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { data: session } = useSession()
+  const canEdit = RFL_WRITE_ROLES.includes(session?.user?.role || "")
   const [alumni, setAlumni] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -89,12 +93,15 @@ export default function AlumniDetailPage() {
         {/* Left Column - 40% */}
         <div className="w-full lg:w-[40%] space-y-6">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center relative group">
-            <button 
-              onClick={() => setIsEditModalOpen(true)}
-              className="absolute top-6 right-6 p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 transition-colors opacity-0 group-hover:opacity-100"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                aria-label="Edit alumni profile"
+                className="absolute top-6 right-6 p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 transition-colors opacity-0 group-hover:opacity-100"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+            )}
 
             <Avatar
               name={alumni.name}
@@ -148,12 +155,14 @@ export default function AlumniDetailPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full min-h-[500px]">
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <h3 className="font-playfair text-lg font-bold text-slate-800">Activities</h3>
-              <button 
-                onClick={() => setIsActivityModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-[#C9A84C]/30 text-[#C9A84C] font-semibold text-xs transition-all duration-200 hover:bg-[#C9A84C] hover:text-white hover:border-[#C9A84C] shadow-sm"
-              >
-                <Plus className="w-3 h-3" /> Add Activity
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => setIsActivityModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-[#C9A84C]/30 text-[#C9A84C] font-semibold text-xs transition-all duration-200 hover:bg-[#C9A84C] hover:text-white hover:border-[#C9A84C] shadow-sm"
+                >
+                  <Plus className="w-3 h-3" /> Add Activity
+                </button>
+              )}
             </div>
 
             <div className="p-8 flex-1 overflow-y-auto">
@@ -190,7 +199,7 @@ export default function AlumniDetailPage() {
                     <Calendar className="w-8 h-8 text-slate-300" />
                   </div>
                   <p className="font-medium text-slate-600">No activities recorded</p>
-                  <p className="text-sm">Add an activity to start tracking their engagement.</p>
+                  {canEdit && <p className="text-sm">Add an activity to start tracking their engagement.</p>}
                 </div>
               )}
             </div>
@@ -198,19 +207,23 @@ export default function AlumniDetailPage() {
         </div>
       </div>
 
-      <AlumniModal 
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        alumniData={alumni}
-        onSuccess={fetchAlumni}
-      />
+      {canEdit && (
+        <AlumniModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          alumniData={alumni}
+          onSuccess={fetchAlumni}
+        />
+      )}
 
-      <ActivityModal
-        isOpen={isActivityModalOpen}
-        onClose={() => setIsActivityModalOpen(false)}
-        alumniId={alumni.id}
-        onSuccess={fetchAlumni}
-      />
+      {canEdit && (
+        <ActivityModal
+          isOpen={isActivityModalOpen}
+          onClose={() => setIsActivityModalOpen(false)}
+          alumniId={alumni.id}
+          onSuccess={fetchAlumni}
+        />
+      )}
     </div>
   )
 }

@@ -46,7 +46,8 @@ function middleware() {
   }).default
 }
 
-const detailPaths = ["participants", "mentorship"]
+const detailPaths = ["participants", "mentorship", "alumni", "sponsorships"]
+const modelNames = { participants: "rFLParticipant", mentorship: "rFLMentorship", alumni: "rFLAlumni", sponsorships: "rFLSponsorship" }
 for (const area of detailPaths) {
   for (const suffix of ["", "/example-id"]) {
     test(`TRUST_MGMT can open ${area}${suffix || " list"}`, () => {
@@ -66,7 +67,7 @@ for (const area of detailPaths) {
   test(`TRUST_MGMT can read the ${area} list`, async () => {
     let calls = 0
     const model = { findMany: async () => { calls++; return [] }, count: async () => 0 }
-    const prisma = area === "participants" ? { rFLParticipant: model } : { rFLMentorship: model }
+    const prisma = { [modelNames[area]]: model }
     const route = load(`app/api/rfl/${area}/route.ts`, boundaries("TRUST_MGMT", prisma))
     const response = await route.GET({ url: `https://example.test/api/rfl/${area}` })
     assert.equal(response.status, 200)
@@ -81,6 +82,148 @@ for (const area of detailPaths) {
     })
   }
 }
+
+test("TRUST_MGMT can read alumni profiles and their activity history", async () => {
+  const alumni = { id: "alumni-id", name: "Graduate", activities: [{ activityName: "Workshop" }] }
+  const route = load("app/api/rfl/alumni/[id]/route.ts", boundaries("TRUST_MGMT", {
+    rFLAlumni: { findUnique: async (query) => {
+      assert.equal(query.where.id, alumni.id)
+      assert.deepEqual(query.include.activities.orderBy, { date: "desc" })
+      return alumni
+    } },
+  }))
+  const response = await route.GET({}, { params: { id: alumni.id } })
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), alumni)
+})
+
+test("TRUST_MGMT cannot add alumni activities", async () => {
+  const route = load("app/api/rfl/alumni/[id]/activities/route.ts", boundaries("TRUST_MGMT"))
+  const response = await route.POST({ json: () => assert.fail("Read-only requests must not read mutation data") }, { params: { id: "alumni-id" } })
+  assert.equal(response.status, 401)
+})
+
+for (const area of ["alumni", "sponsorships"]) {
+  for (const role of [null, "HOSTEL_INCHARGE"]) {
+    test(`${area} list rejects ${role || "unauthenticated requests"} before querying data`, async () => {
+      const route = load(`app/api/rfl/${area}/route.ts`, boundaries(role))
+      assert.equal((await route.GET({ url: `https://example.test/api/rfl/${area}` })).status, 401)
+    })
+  }
+}
+
+const sponsorship = {
+  id: "sponsorship-id", sponsorName: "Test Sponsor", type: "NEED_BASED", amount: 12000,
+  startDate: new Date("2026-11-01"), endDate: new Date("2027-11-01"), status: "ACTIVE",
+  participantId: "member-id", notes: "Tuition for the academic year", other: "Books included",
+}
+
+test("TRUST_MGMT sponsorship details show all fields and link to the participant", async () => {
+  const page = load("app/dashboard/rfl/sponsorships/[id]/page.tsx", boundaries("TRUST_MGMT", {
+    rFLSponsorship: { findUnique: async () => sponsorship },
+    rFLParticipant: { findUnique: async (query) => {
+      assert.deepEqual(query.select, { id: true, name: true, institute: true })
+      return { id: "member-id", name: "Member", institute: "University" }
+    } },
+  })).default
+  const html = renderToStaticMarkup(await page({ params: { id: sponsorship.id } }))
+  for (const text of ["Test Sponsor", "NEED BASED", "12,000", "01 Nov 2026", "01 Nov 2027", "ACTIVE", sponsorship.notes, sponsorship.other, "University"]) assert.ok(html.includes(text), `Missing ${text}`)
+  assert.ok(html.includes('/dashboard/rfl/participants/member-id'))
+  assert.ok(!html.includes("Save Sponsorship"))
+})
+
+for (const participantId of [null, "deleted-member"]) {
+  test(`sponsorship view handles ${participantId ? "a deleted participant" : "general sponsorship and missing fields"}`, async () => {
+    const page = load("app/dashboard/rfl/sponsorships/[id]/page.tsx", boundaries("TRUST_MGMT", {
+      rFLSponsorship: { findUnique: async () => ({ ...sponsorship, participantId, endDate: null, amount: null, other: null, notes: null }) },
+      rFLParticipant: { findUnique: async () => null },
+    })).default
+    const html = renderToStaticMarkup(await page({ params: { id: sponsorship.id } }))
+    for (const text of [participantId ? "Participant no longer available" : "General", "No End Date", "Not recorded", "No notes recorded."]) assert.ok(html.includes(text))
+  })
+}
+
+test("sponsorship view returns not found for a missing record", async () => {
+  const page = load("app/dashboard/rfl/sponsorships/[id]/page.tsx", {
+    ...boundaries("TRUST_MGMT", { rFLSponsorship: { findUnique: async () => null } }),
+    "next/navigation": { notFound: () => { throw new Error("NOT_FOUND") } },
+  }).default
+  await assert.rejects(page({ params: { id: "missing" } }), /NOT_FOUND/)
+})
+
+for (const role of [null, "HOSTEL_INCHARGE"]) {
+  test(`sponsorship view rejects ${role || "unauthenticated requests"} before querying data`, async () => {
+    const page = load("app/dashboard/rfl/sponsorships/[id]/page.tsx", {
+      ...boundaries(role),
+      "next/navigation": { redirect: (target) => { throw new Error(target) } },
+    }).default
+    await assert.rejects(page({ params: { id: sponsorship.id } }), new RegExp(role ? "/unauthorized" : "/login"))
+  })
+}
+
+// Render loaded client screens with controlled session/state, without a browser or live database.
+function renderClient(file, role, states, props = {}) {
+  let stateIndex = 0
+  const Component = load(file, {
+    react: {
+      ...require("react"),
+      useState: () => [states[stateIndex++], () => {}],
+      useEffect: () => {},
+      useCallback: (fn) => fn,
+    },
+    "next-auth/react": { useSession: () => ({ data: { user: { role } } }) },
+    "next/navigation": { useParams: () => ({ id: "alumni-id" }), useRouter: () => ({ push: () => {} }) },
+    "@/components/AlumniModal": { AlumniModal: () => null },
+    "@/components/ActivityModal": { ActivityModal: () => null },
+    "@/components/SponsorshipModal": { SponsorshipModal: () => null },
+  }).default
+  return renderToStaticMarkup(require("react").createElement(Component, props))
+}
+
+for (const role of ["TRUST_MGMT", "SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"]) {
+  const canEdit = role !== "TRUST_MGMT"
+  const alumni = { id: "alumni-id", name: "Graduate", program: "Leadership", institute: "University", graduationYear: 2024, currentStatus: "Employed", _count: { activities: 1 }, activities: [{ id: "activity-id", activityName: "Workshop", type: "workshop", date: "2026-11-01", status: "Completed" }] }
+
+  test(`${role} alumni list has view access and ${canEdit ? "keeps" : "hides"} mutation controls`, () => {
+    const html = renderClient("app/dashboard/rfl/alumni/AlumniClient.tsx", role, [[alumni], false, "", false, null, false], {
+      stats: { totalAlumni: 1, activitiesThisYear: 1, mostRecentGraduationYear: 2024 },
+    })
+    assert.ok(html.includes("Graduate"))
+    assert.ok(html.includes("View Profile"))
+    assert.equal(html.includes("Add Alumni"), canEdit)
+    assert.equal(html.includes('title="Edit"'), canEdit)
+  })
+
+  test(`${role} alumni profile shows history and ${canEdit ? "keeps" : "hides"} edit/activity controls`, () => {
+    const html = renderClient("app/dashboard/rfl/alumni/[id]/page.tsx", role, [alumni, false, false, false])
+    assert.ok(html.includes("Graduate"))
+    assert.ok(html.includes("Workshop"))
+    assert.equal(html.includes("Edit alumni profile"), canEdit)
+    assert.equal(html.includes("Add Activity"), canEdit)
+  })
+
+  test(`${role} sponsorship list has View and ${canEdit ? "keeps" : "hides"} mutation controls`, () => {
+    const html = renderClient("app/dashboard/rfl/sponsorships/SponsorshipClient.tsx", role, [[sponsorship], 1, 1, 1, false, "", false, null], {
+      stats: { activeCount: 1, totalSponsors: 1, expiringSoon: 0, totalValue: 12000 },
+    })
+    assert.ok(html.includes(`/dashboard/rfl/sponsorships/${sponsorship.id}`))
+    assert.ok(html.includes('title="View"'))
+    assert.equal(html.includes("Add Sponsorship"), canEdit)
+    assert.equal(html.includes('title="Edit"'), canEdit)
+    assert.equal(html.includes('title="Delete"'), canEdit)
+  })
+}
+
+test("TRUST_MGMT overview offers read-only links to all four RFL tabs", async () => {
+  const model = { count: async () => 0, findMany: async () => [] }
+  const page = load("app/dashboard/rfl/page.tsx", boundaries("TRUST_MGMT", {
+    rFLParticipant: model, rFLMentorship: model, rFLAlumni: model, rFLSponsorship: model,
+  })).default
+  const html = renderToStaticMarkup(await page())
+  for (const label of ["View Participants", "View Mentorship", "View Alumni", "View Sponsorships"]) assert.ok(html.includes(label))
+  assert.ok(!html.includes("Add Alumni"))
+  assert.ok(!html.includes("Add Sponsorship"))
+})
 
 test("participant read access keeps admission fields restricted to existing staff roles", async () => {
   let selected

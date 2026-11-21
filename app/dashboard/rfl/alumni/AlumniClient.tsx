@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { AlumniModal } from "@/components/AlumniModal"
 import { Avatar } from "@/components/Avatar"
+import { RFL_WRITE_ROLES } from "@/lib/rbac"
 import type { RFLAlumni } from "@prisma/client"
 
 interface AlumniClientProps {
@@ -60,7 +61,7 @@ export default function AlumniClient({ stats }: AlumniClientProps) {
     return () => clearTimeout(delayDebounceFn)
   }, [fetchAlumni])
 
-  const canEdit = ["SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"].includes(session?.user?.role || "")
+  const canEdit = RFL_WRITE_ROLES.includes(session?.user?.role || "")
 
   const handleEdit = async (id: string) => {
     setIsLoadingEdit(true)
@@ -180,7 +181,7 @@ export default function AlumniClient({ stats }: AlumniClientProps) {
             <Users className="w-8 h-8 text-slate-300" />
           </div>
           <p className="text-lg font-medium text-slate-600">No alumni records yet</p>
-          <p className="text-sm text-slate-400 mt-1">Try adjusting your search or add a new record.</p>
+          <p className="text-sm text-slate-400 mt-1">{canEdit ? "Try adjusting your search or add a new record." : "Try adjusting your search."}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

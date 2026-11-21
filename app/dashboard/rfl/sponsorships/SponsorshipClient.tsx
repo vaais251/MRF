@@ -4,11 +4,13 @@ import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { 
   Plus, Search, DollarSign, Users, AlertCircle, 
-  Wallet, Loader2, Edit, Trash2, Calendar
+  Wallet, Loader2, Edit, Trash2, Calendar, Eye
 } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { SponsorshipModal } from "@/components/SponsorshipModal"
+import Link from "next/link"
+import { RFL_WRITE_ROLES } from "@/lib/rbac"
 
 interface SponsorshipClientProps {
   stats: {
@@ -80,7 +82,7 @@ export default function SponsorshipClient({ stats }: SponsorshipClientProps) {
     }
   }
 
-  const canEdit = ["SUPER_ADMIN", "PROGRAM_MANAGER", "MEO_OFFICER", "RFL_COORDINATOR"].includes(session?.user?.role || "")
+  const canEdit = RFL_WRITE_ROLES.includes(session?.user?.role || "")
 
   const getTypeColor = (type: string) => {
     switch(type) {
@@ -209,7 +211,7 @@ export default function SponsorshipClient({ stats }: SponsorshipClientProps) {
                 <th className="px-6 py-4">End Date</th>
                 <th className="px-6 py-4">Amount</th>
                 <th className="px-6 py-4">Status</th>
-                {canEdit && <th className="px-6 py-4 text-right">Actions</th>}
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -223,12 +225,12 @@ export default function SponsorshipClient({ stats }: SponsorshipClientProps) {
                     <td className="px-6 py-4"><div className="w-24 h-4 bg-slate-200 rounded" /></td>
                     <td className="px-6 py-4"><div className="w-20 h-4 bg-slate-200 rounded" /></td>
                     <td className="px-6 py-4"><div className="w-20 h-6 bg-slate-200 rounded-full" /></td>
-                    {canEdit && <td className="px-6 py-4 text-right"><div className="w-16 h-6 bg-slate-200 rounded ml-auto" /></td>}
+                    <td className="px-6 py-4 text-right"><div className="w-16 h-6 bg-slate-200 rounded ml-auto" /></td>
                   </tr>
                 ))
               ) : sponsorships.length === 0 ? (
                 <tr>
-                  <td colSpan={canEdit ? 8 : 7} className="px-6 py-16 text-center">
+                  <td colSpan={8} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center justify-center text-slate-400">
                       <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
                         <Wallet className="w-8 h-8 text-slate-300" />
@@ -261,9 +263,18 @@ export default function SponsorshipClient({ stats }: SponsorshipClientProps) {
                         {s.status}
                       </span>
                     </td>
-                    {canEdit && (
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/dashboard/rfl/sponsorships/${s.id}`}
+                          title="View"
+                          aria-label={`View sponsorship from ${s.sponsorName}`}
+                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                        {canEdit && (
+                          <>
                           <button 
                             onClick={() => { setSelectedSponsorship(s); setIsModalOpen(true) }}
                             className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-md transition-colors" title="Edit"
@@ -276,9 +287,10 @@ export default function SponsorshipClient({ stats }: SponsorshipClientProps) {
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        </div>
-                      </td>
-                    )}
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -310,7 +322,7 @@ export default function SponsorshipClient({ stats }: SponsorshipClientProps) {
         </div>
       </div>
 
-      {isModalOpen && (
+      {canEdit && isModalOpen && (
         <SponsorshipModal 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 

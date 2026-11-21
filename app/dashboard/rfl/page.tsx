@@ -88,6 +88,8 @@ export default async function RFLPage() {
   const actions = isReadOnly ? [
     { label: "View Participants", href: "/dashboard/rfl/participants" },
     { label: "View Mentorship", href: "/dashboard/rfl/mentorship" },
+    { label: "View Alumni", href: "/dashboard/rfl/alumni" },
+    { label: "View Sponsorships", href: "/dashboard/rfl/sponsorships" },
   ] : [
     { label: "Add Participant", href: "/dashboard/rfl/participants" },
     { label: "Record Mentorship Session", href: "/dashboard/rfl/mentorship" },
